@@ -1,0 +1,96 @@
+%% Creator: Inkscape 1.4.2 (1:1.4.2+202505120738+ebf0e940d0), www.inkscape.org
+%% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
+%% Accompanies image file 'fig/multilevel_domain_periodic.pdf' (pdf, eps, ps)
+%%
+%% To include the image in your LaTeX document, write
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics{<filename>.pdf}
+%% To scale the image, write
+%%   \def\svgwidth{<desired width>}
+%%   \input{<filename>.pdf_tex}
+%%  instead of
+%%   \includegraphics[width=<desired width>]{<filename>.pdf}
+%%
+%% Images with a different path to the parent latex file can
+%% be accessed with the `import' package (which may need to be
+%% installed) using
+%%   \usepackage{import}
+%% in the preamble, and then including the image with
+%%   \import{<path to file>}{<filename>.pdf_tex}
+%% Alternatively, one can specify
+%%   \graphicspath{{<path to file>/}}
+%% 
+%% For more information, please see info/svg-inkscape on CTAN:
+%%   http://tug.ctan.org/tex-archive/info/svg-inkscape
+%%
+\begingroup%
+  \makeatletter%
+  \providecommand\color[2][]{%
+    \errmessage{(Inkscape) Color is used for the text in Inkscape, but the package 'color.sty' is not loaded}%
+    \renewcommand\color[2][]{}%
+  }%
+  \providecommand\transparent[1]{%
+    \errmessage{(Inkscape) Transparency is used (non-zero) for the text in Inkscape, but the package 'transparent.sty' is not loaded}%
+    \renewcommand\transparent[1]{}%
+  }%
+  \providecommand\rotatebox[2]{#2}%
+  \newcommand*\fsize{\dimexpr\f@size pt\relax}%
+  \newcommand*\lineheight[1]{\fontsize{\fsize}{#1\fsize}\selectfont}%
+  \ifx\svgwidth\undefined%
+    \setlength{\unitlength}{1283.04568313bp}%
+    \ifx\svgscale\undefined%
+      \relax%
+    \else%
+      \setlength{\unitlength}{\unitlength * \real{\svgscale}}%
+    \fi%
+  \else%
+    \setlength{\unitlength}{\svgwidth}%
+  \fi%
+  \global\let\svgwidth\undefined%
+  \global\let\svgscale\undefined%
+  \makeatother%
+  \begin{picture}(1,1.07735471)%
+    \lineheight{1}%
+    \setlength\tabcolsep{0pt}%
+    \put(0,0){\includegraphics[width=\unitlength,page=1]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.42894031,0.36114325){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\mathcal{D}^{(4)}$}\end{tabular}}}}%
+    \put(0.26610438,0.65185914){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\mathcal{D}^{(3)}$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=2]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.55937624,0.69826692){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\Omega$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=3]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.11888987,0.84843606){\color[rgb]{0.23529412,0.22745098,0.70588235}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{${S}\,^{(2)}$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=4]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.56104664,0.3249745){\color[rgb]{0.23529412,0.22745098,0.70588235}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$h^{(4)}$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=5]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.28299991,0.51269052){\color[rgb]{0.23529412,0.22745098,0.70588235}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$h^{(3)}$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=6]{fig/multilevel_domain_periodic.pdf}}%
+    \put(-0.00121781,0.64775044){\color[rgb]{0.23529412,0.22745098,0.70588235}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{${S}\,^{(2)}$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=7]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.76034335,0.44704495){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\mathcal{P}^{(3)\to(4)}$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=8]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.11063631,0.61295){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\mathcal{D}^{(2)}$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=9]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.27060139,0.38015544){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\mathcal{P}^{(3),\dagger}$}\end{tabular}}}}%
+    \put(0.19598771,0.51144854){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\mathcal{B}$}\end{tabular}}}}%
+    \put(0.26474647,0.80486203){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\mathcal{P}^{(3)}$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=10]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.16871544,0.32142718){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\hat{\vec{y}}\,^{(2,P_1)}$}\end{tabular}}}}%
+    \put(0.15683423,0.77540796){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\vec{y}\,^{(2)}$}\end{tabular}}}}%
+    \put(0.07782351,0.68346402){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\mathcal{D}^{(1)}$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=11]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.03183161,0.70805259){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\vec{x}$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=12]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.11027371,0.00731661){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\hat{\vec{y}}\,^{(4,P_i)}$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=13]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.00028834,0.36032043){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\partial\Omega$}\end{tabular}}}}%
+    \put(0.71689968,0.95244978){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{Near-field compu-}\\\textbf{tations with}\\\textbf{3D kernel}\end{tabular}}}}%
+    \put(0.71689968,0.1761724){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{Far-field compu-}\\\textbf{tations with }\\\textbf{specialized }\\\textbf{2D kernel}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=14]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.55469993,0.26494482){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\Omega_\text{Far-field}$}\\\end{tabular}}}}%
+    \put(0.55469993,0.79103692){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\Omega_\text{Near-field}$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=15]{fig/multilevel_domain_periodic.pdf}}%
+    \put(0.7393632,0.76167155){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{Periodic BC}\end{tabular}}}}%
+    \put(0.7393632,0.3174158){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{Periodic BC}\end{tabular}}}}%
+  \end{picture}%
+\endgroup%
