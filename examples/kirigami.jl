@@ -4,7 +4,7 @@ using WaterLily,BiotSavartBCs,CUDA,StaticArrays
 linear(t)=min(t,one(t))
 WaterLily.CFL(a::Flow) = WaterLily.CFL(a;Δt_max=1) # good idea when accelerating from rest
 
-function kirigami(N;H=0,rings=16,U=1,a=1,Re=1e4,mem=Array,T=Float32,Ux=linear,R=T(2N/3),ϵ=T(1/2),half_thk=ϵ+1/T(√2),fall=false)
+function kirigami(N;H=0,rings=16,U=1,Re=1e4,mem=Array,T=Float32,Ux=linear,R=T(2N/3),ϵ=T(1/2),half_thk=ϵ+1/T(√2),fall=false)
     δR = R/rings; δH = R*H/rings^2; x₀ = max(R*(1-H)/2,δR+half_thk-min(0,R*H))
     @inline mapped(f) = AutoBody(f,(x,t)->x-SA[x₀,0,0])
     @inline ring(R₀,R₁,x₀,x₁,ϕ) = mapped() do (x,y,z),t
@@ -14,8 +14,8 @@ function kirigami(N;H=0,rings=16,U=1,a=1,Re=1e4,mem=Array,T=Float32,Ux=linear,R=
     end
     body = sum(i -> ring(δR*(i-1), δR*i, δH*(i-1)^2, δH*i^2, π*(i%2)), 1:rings)
     H == 0 && (body = ring(0,R,0,0,0))
-    Ut = fall ? (0,0,0) : (i,x,t)->(i==1 ? U*Ux(a*U*t/2R) : zero(t)) # velocity BC
-    BiotSimulation((3N,N,N),Ut,R;U,ν=U*2R/Re,body,mem,T,ϵ,nonbiotfaces=(-2,-3))
+    Ut = fall ? (0,0,0) : (i,x,t)->(i==1 ? U*Ux(U*t/2R) : zero(t)) # velocity BC
+    BiotSimulation((2N,N,N),Ut,R;U,ν=U*2R/Re,body,mem,T,ϵ,nonbiotfaces=(-2,-3))
 end
 
 import BiotSavartBCs: interaction,symmetry,image
@@ -43,8 +43,19 @@ vtk_ω(a::AbstractSimulation) = (@loop a.flow.f[I,:] .= ω(I,a.flow.u) over I in
 vtk_d(a::AbstractSimulation) = (measure_sdf!(a.flow.σ,a.body,WaterLily.time(a)); a.flow.σ |> Array)
 vtk_λ₂(a::AbstractSimulation) = (@inside a.flow.σ[I] = λ₂(I,a.flow.u); a.flow.σ |> Array)
 
+# Convergence sweep
+using JLD2
+H = 1; times = 0.05:0.05:3
+for N in (3*2^4, 2^6, 3*2^5, 2^7, 3*2^6) # 3*2^7 10GiB # do 2^8 below
+    @show N; flush(stdout)
+    sim = kirigami(N;H,rings=8,mem=CUDA.CuArray)
+    data = drag!(sim,times)
+    save_object("kirigami_N$(N)_H$(H)_rings8_hist.jld2",data)
+    writer = vtkWriter("kirigami_N$(N)_H$(H)_rings8"; attrib=Dict("ω"=>vtk_ω,"λ₂"=>vtk_λ₂,"d"=>vtk_d))
+    save!(writer,sim); close(writer)
+end
+
 # Rings sweep
-using TypedTables,JLD2
 N = 2^8; times = 0.05:0.05:3
 for H in (0.5,1,2,4), rings in 4:4:20
     @show rings; flush(stdout)
