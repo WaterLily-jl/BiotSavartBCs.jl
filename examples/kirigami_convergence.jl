@@ -97,5 +97,5 @@ rowsize!(f.layout, 3, Auto(0.625))  # bottom two plots: 50% -> 62.5% (+25%) of t
 colsize!(f.layout, 1, Fixed(0.34cm))  # left spacer: aligns ax1 with axflow's left edge
 colsize!(f.layout, 4, Fixed(1.25cm))  # right spacer: aligns ax2 with axflow's right edge
 
-save("tex/fig/kirigami_figure.png", f, px_per_unit=300/inch)
+save("tex/fig/kirigami_convergence.png", f, px_per_unit=300/inch)
 f
