@@ -1,4 +1,4 @@
-%% Creator: Inkscape 1.1.2 (0a00cf5339, 2022-02-04), www.inkscape.org
+%% Creator: Inkscape 1.3.2 (1:1.3.2+202311252150+091e20ef0f), www.inkscape.org
 %% PDF/EPS/PS + LaTeX output extension by Johan Engelen, 2010
 %% Accompanies image file 'fig/multilevel_domain_sym.pdf' (pdf, eps, ps)
 %%
@@ -55,22 +55,24 @@
     \setlength\tabcolsep{0pt}%
     \put(0,0){\includegraphics[width=\unitlength,page=1]{fig/multilevel_domain_sym.pdf}}%
     \put(0.57724707,0.09220624){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\mathcal{D}^{(i)}$}\end{tabular}}}}%
-    \put(0.78222545,0.54727504){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\Omega$}\end{tabular}}}}%
+    \put(0.78222545,0.53974596){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\Omega$}\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=2]{fig/multilevel_domain_sym.pdf}}%
     \put(0.36788556,0.43720832){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\vec{y}$}\end{tabular}}}}%
     \put(0.36313058,0.15334401){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\vec{y}\,^\dagger$}\end{tabular}}}}%
-    \put(0.03347064,0.47254187){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\vec{x}$}\end{tabular}}}}%
+    \put(0.0044463,0.48121103){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\vec{x}$}\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=3]{fig/multilevel_domain_sym.pdf}}%
-    \put(0.2510064,0.60585538){\color[rgb]{0.23529412,0.22745098,0.70588235}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{${S}\,^{(i)}$}\end{tabular}}}}%
+    \put(0.2510064,0.60585538){\color[rgb]{0.23529412,0.22745098,0.70588235}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{${S}^{(i)}$}\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=4]{fig/multilevel_domain_sym.pdf}}%
     \put(0.09475849,0.52406679){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\mathcal{R}^{(i)}$}\end{tabular}}}}%
-    \put(0.09475849,0.19852941){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{${\mathcal{R}^{(i)}}^\dagger$}\end{tabular}}}}%
-    \put(0.09475849,0.337965){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\overline{\mathcal{R}^{(i)}}^\dagger$}\end{tabular}}}}%
-    \put(0.00715022,0.31306784){\color[rgb]{0.23529412,0.22745098,0.70588235}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{${S}\,^{(i)}$}\end{tabular}}}}%
+    \put(0.34341057,0.24084591){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{${\mathcal{R}^{(i)}}^\dagger$}\end{tabular}}}}%
+    \put(0.33960049,0.32872288){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\overline{\mathcal{R}^{(i)}}^\dagger$}\end{tabular}}}}%
+    \put(-0.03953,0.31306784){\color[rgb]{0.23529412,0.22745098,0.70588235}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{${S}^{(i)}$}\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=5]{fig/multilevel_domain_sym.pdf}}%
     \put(0.78222545,0.04088399){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\Omega^\dagger$}\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=6]{fig/multilevel_domain_sym.pdf}}%
     \put(0.63036191,0.59276027){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\partial\Omega$}\end{tabular}}}}%
     \put(0,0){\includegraphics[width=\unitlength,page=7]{fig/multilevel_domain_sym.pdf}}%
+    \put(0.0044463,0.14156661){\color[rgb]{0,0,0}\makebox(0,0)[lt]{\lineheight{1.25}\smash{\begin{tabular}[t]{l}\textbf{$\vec{x}\,^\dagger$}\end{tabular}}}}%
+    \put(0,0){\includegraphics[width=\unitlength,page=8]{fig/multilevel_domain_sym.pdf}}%
   \end{picture}%
 \endgroup%
