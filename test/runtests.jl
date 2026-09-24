@@ -3,6 +3,8 @@ using Test
 using WaterLily
 
 using BiotSavartBCs: @vecloop,inside_u,restrict!,project!,down,front,step
+
+using StaticArrays
 @testset "util.jl" begin
     a = zeros(Int,(4,4,6,3))
     @vecloop a[I] += 1 over I in inside_u(a,buff=2)
@@ -27,7 +29,7 @@ using BiotSavartBCs: @vecloop,inside_u,restrict!,project!,down,front,step
     Ti = last(tar[2])
     T,i = front(Ti),last(Ti)
     @test CartesianIndex(down(T),i)==last(tar[3])
-    
+
     @vecloop ml[3][I] += 16 over I in tar[3]
     project!(ml,tar)
     @test ml[2][Ti] == 4
@@ -48,7 +50,7 @@ using BiotSavartBCs: @vecloop,inside_u,restrict!,project!,down,front,step
     Ti = last(tar[2])
     T,i = front(Ti),last(Ti)
     @test CartesianIndex(down(T),i)==last(tar[3])
-    
+
     @vecloop ml[3][I] += 4 over I in tar[3]
     project!(ml,tar)
     @test ml[2][Ti] == 2
@@ -142,7 +144,7 @@ using BiotSavartBCs: slice
     biotBC!(u,U,ω,tar,ftar;fmm=true) # fix domain velocities
     @test maximum(abs,(u.-u₀)[2:end,2:end-1,1])<0.028
     @test maximum(abs,(u.-u₀)[2:end-1,2:end,2])<0.025
-    
+
     BC!(u,U) # mess up boundaries
     biotBC!(u,U,ω,tar,ftar;fmm=false) # fix domain velocities
     @test maximum(abs,(u.-u₀)[2:end,2:end-1,1])<0.0063 # No target interpolation error
@@ -184,5 +186,107 @@ end
         @test abs(u_inf-19/27)<0.033  # upstream slow down
         @time sim_step!(sim;remeasure=false)
         @show sim.pois.ml.n
+    end
+
+    # Spanwise-periodic cylinder: stagnation velocity should match 2D result (fmm=true only; tree has no periodic support)
+    cyl_span(D;m=2D,Lz=D÷2) = BiotSimulation((m,m,Lz),(1,0,0),D;
+                                              body=AutoBody((x,t)->√sum(abs2,(x.-m/2)[1:2])-D/2),
+                                              ν=D/1e4,fmm=true,perdir=(3,))
+    let sim = cyl_span(128)
+        sim_step!(sim;remeasure=false)
+        u_max = maximum(sim.flow.u[:,:,:,1])
+        v_max = maximum(sim.flow.u[:,:,:,2])
+        u_inf = minimum(sim.flow.u[1,:,:,1])
+        @show u_max,v_max,u_inf
+        @test abs(u_max-2)<0.15 # 2D cylinder stagnation: u_max = 2 (loose tol: 3D first-step accuracy)
+        @test abs(v_max-1)<0.05 # circle v_max = 1
+        @test abs(u_inf-0.75)<0.10 # upstream slow down
+        # z-reflection symmetry: z-uniform body/inflow with w(0)=0 -> spanwise w must stay ~0.
+        # A z-varying periodic FMM BC (the bug pinteraction fixes) injects w via the pressure solve.
+        @test maximum(abs,sim.flow.u[:,:,:,3]) < 1e-3  # spanwise w ~ 0 (≈3e-5 here)
+        z_uniform = maximum(k->maximum(abs,sim.flow.u[:,:,k,1].-sim.flow.u[:,:,2,1]), 3:size(sim.flow.u,3)-2)
+        @test z_uniform < 1e-2                          # streamwise u is z-uniform
+        @show sim.pois.ml.n
+        @test !isempty(sim.pois.ml.n)
+    end
+end
+
+@testset "periodic BCs" begin
+    # collect_targets excludes periodic faces
+    ml = MLArray(zeros(Float32,10,10,18,3))
+    tar   = collect_targets(ml)
+    tar_p = collect_targets(ml,(),(3,))
+    @test !any(T->last(T)==3, tar_p[1])                         # no z-direction targets
+    @test length(tar_p[1]) == length(tar[1]) - 2*(10-2)*(10-2) # correct count
+
+    # periodicBC! sets ghost cells to match the opposing interior face (perBC! for vector fields)
+    using BiotSavartBCs: periodicBC!
+    N=10; u = randn(Float32,N,N,N,3)
+    periodicBC!(u,(3,))
+    @test u[:,:,1,:] == u[:,:,N-1,:]   # lower ghost = upper interior
+    @test u[:,:,N,:] == u[:,:,2,:]     # upper ghost = lower interior
+
+    # pflowBC! leaves periodic ghost cells untouched
+    u2 = randn(Float32,N,N,N,3)
+    z_lo,z_hi = copy(u2[:,:,1,:]),copy(u2[:,:,N,:])
+    pflowBC!(u2,(3,))
+    @test u2[:,:,1,:] == z_lo
+    @test u2[:,:,N,:] == z_hi
+
+    # z-uniform ω: periodic images reduce spurious z-variation at x-face boundaries
+    pow=4; N2=2+2^pow; Lz=8
+    u2 = Array{Float32}(undef,(N2,N2,2)); apply!(lamb_dipole(N2),u2)
+    u3 = zeros(Float32,N2,N2,Lz,3)
+    for k in 1:Lz; u3[:,:,k,1].=u2[:,:,1]; u3[:,:,k,2].=u2[:,:,2]; end
+    ω3 = MLArray(zeros(Float32,N2,N2,Lz,3)); fill_ω!(ω3,u3,(3,)); U3 = (1,0,0)
+
+    # 3D spanwise-periodic Lamb dipole: for a z-uniform flow, biotBC! with perdir=(3,)
+    # must produce z-UNIFORM x,y face velocities (the defining property of a periodic BC).
+    tar3p = collect_targets(ω3,(),(3,)); ftar3p = flatten_targets(tar3p)
+    for k in 1:Lz; u3[:,:,k,1].=u2[:,:,1]; u3[:,:,k,2].=u2[:,:,2]; end
+    BC!(u3,U3); biotBC!(u3,U3,ω3,tar3p,ftar3p,(3,),4;fmm=true)
+    z_var_x = maximum(z->abs(u3[2,N2÷2,z,1]-u3[2,N2÷2,Lz÷2,1]), 3:Lz-2)
+    z_var_y = maximum(z->abs(u3[N2÷2,2,z,2]-u3[N2÷2,2,Lz÷2,2]), 3:Lz-2)
+    @test z_var_x < 1e-3
+    @test z_var_y < 1e-3
+
+    # After mom_project!, periodic ghost cells must be fresh (perdir=(3,) — periodic BCs are 3D-only).
+    # Without periodicBC! at the end of mom_project!, pflowBC! skips perdir and
+    # ghosts remain stale, causing spurious div(u) in the next step.
+    sim3d = BiotSimulation((16,16,8),(1,0,0),8; perdir=(3,), ν=0.01)
+    sim_step!(sim3d; remeasure=false)
+    u = sim3d.flow.u
+    @test u[:,:,1,:] == u[:,:,end-1,:]  # lower ghost = upper interior
+    @test u[:,:,end,:] == u[:,:,2,:]    # upper ghost = lower interior
+
+    # fill_ω! must use buff=1 along perdir: the periodic Biot-Savart source integrates the
+    # full period (indices 2:N-1), so the first interior vorticity layers (z=2, Nz-1) must be
+    # populated
+    Nx=Ny=10; P=6; φ0=0.9f0
+    fx = Float32[sin(2π*(i-1)/Nx) for i in 1:Nx, j in 1:Ny]
+    fy = Float32[cos(2π*(j-1)/Ny) for i in 1:Nx, j in 1:Ny]
+    φz(k) = 2π*mod(k-2,P)/P + φ0   # period P; bit-identical at matching cells of either domain
+    build_u(Nz) = (v=zeros(Float32,Nx,Ny,Nz,3);
+        for k in 1:Nz; φ=φz(k)
+            v[:,:,k,1] .= fx.*sin(φ); v[:,:,k,2] .= fy.*cos(φ); v[:,:,k,3] .= (fx.+fy).*sin(φ)
+        end; v)
+    Nz_s = P+2                                                      # single period
+    u_s = build_u(Nz_s); ω_s = MLArray(zeros(Float32,Nx,Ny,Nz_s,3)); fill_ω!(ω_s,u_s,(3,))
+    Nz_t = 4P+2                                                     # four periods
+    u_t = build_u(Nz_t); ω_t = MLArray(zeros(Float32,Nx,Ny,Nz_t,3)); fill_ω!(ω_t,u_t) # buff=2 ok deep inside
+    xy = (3:Nx-2, 3:Ny-2)                                          # x,y interior (skip x,y buff zeros)
+    for k in 2:Nz_s-1                                              # shift one period into tall interior
+        @test ω_s[1][xy...,k,:] == ω_t[1][xy...,k+P,:]
+    end
+    @test maximum(abs, ω_s[1][xy...,2,:]) > 0.01                  # boundary layer genuinely nonzero
+    @test maximum(abs, ω_s[1][xy...,Nz_s-1,:]) > 0.01            # (so the match above isn't 0==0)
+    ω_b2 = MLArray(zeros(Float32,Nx,Ny,Nz_s,3)); fill_ω!(ω_b2,u_s)  # no perdir -> buff=2 in z (old path)
+    @test all(iszero, ω_b2[1][:,:,2,:]) && all(iszero, ω_b2[1][:,:,Nz_s-1,:])  # what the fix guards against
+
+    # Spanwise z-reflection symmetry over several steps, check that z-velocity doesn't grow spuriously, test pinteraction
+    let sim = BiotSimulation((48,48,8),(1,0,0),24; body=AutoBody((x,t)->√sum(abs2,(x.-24)[1:2])-12),
+                             ν=24/1e3, fmm=true, perdir=(3,))
+        for _ in 1:6; sim_step!(sim;remeasure=false); end
+        @test maximum(abs,sim.flow.u[:,:,:,3]) < 1e-3   # spanwise w stays ∼1e-4
     end
 end

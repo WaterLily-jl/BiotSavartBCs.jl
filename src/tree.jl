@@ -13,7 +13,6 @@ Base.@propagate_inbounds @fastmath function tree(ml,Ti::CartesianIndex{Np1}) whe
     for S in Rinner
         val += weighted(x-SVector{N,Float32}(S.I),S,i,ω)
     end
-    # @show Rinner, val
 
     # Loop down levels
     x = x .- 1.5f0 # adjust origin for scaling
@@ -25,9 +24,8 @@ Base.@propagate_inbounds @fastmath function tree(ml,Ti::CartesianIndex{Np1}) whe
         Rinner ≠ Router && for S in Router
             S ∉ Rinner && (val += weighted(x-(SVector{N,Float32}(S.I) .- 1.5f0)*2^(l-1),S,i,ω))
         end
-        # @show T, Rinner, Router, val
     end; val
 end
 
-# Biot-Savart BC using the tree sum
-treeBC!(ml,targets) = @vecloop ml[1][Ii]=tree(ml,Ii) over Ii ∈ targets
+# Biot-Savart BC using the tree sum (reference/testing only; periodic BCs use fmm=true)
+treeBC!(ml,targets,perdir=(),nimages=0) = @vecloop ml[1][Ii]=tree(ml,Ii) over Ii ∈ targets

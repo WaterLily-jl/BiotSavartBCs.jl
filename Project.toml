@@ -1,17 +1,21 @@
 name = "BiotSavartBCs"
 uuid = "ec5a6caf-bdf7-41d0-b8e1-5fafde84e19f"
-authors = ["Gabriel Weymouth"]
 version = "1.0.0-DEV"
+authors = ["Gabriel Weymouth"]
 
 [deps]
 Atomix = "a9b6321e-bd34-4604-b9c9-b65b8de01458"
+ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 KernelAbstractions = "63c18a36-062a-441e-b654-da1e3ab1ce7c"
+SpecialFunctions = "276daf66-3868-5448-9aa4-cd146d93841b"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 WaterLily = "ed894a53-35f9-47f1-b17f-85db9237eebd"
 
 [compat]
 Atomix = "1"
+ForwardDiff = "1.3.3"
 KernelAbstractions = "0.9"
+SpecialFunctions = "2.8.0"
 StaticArrays = "1.9"
 WaterLily = "1.7"
 julia = "1.10"

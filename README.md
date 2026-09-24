@@ -25,11 +25,11 @@ There are numerous examples in the `examples` folder of this repository that sho
 
 ### Method
 
-This package takes a practical approach to avoid the two fundamental issues with applying the Biot-Savart equation to set the boundary conditions of a projection-based Navier-Stokes solver: 
+This package takes a practical approach to avoid the two fundamental issues with applying the Biot-Savart equation to set the boundary conditions of a projection-based Navier-Stokes solver:
  1. A naive weighted sum over the $N_s$ vorticity sources at every cell for all $N_t$ targets at the domain cell faces would make the boundary condition update take $O(N_s N_t)$ operations, making it *orders of magnitude slower* than the rest of the solver. We accelerate the BC update by clustering the vorticity sources using a tree method (oct-tree in 3D and quad-tree in 2D). This reuses the pooling method in WaterLily's Multigrid pressure solver and reduces the cost to $O(\log(N_s) N_t)$. We can further accelerate the BC update by also clustering the target faces - making this an $O(N_t)$ Fast Multi*level* Method FMℓM - a variant of the classic [Fast Multipole Method](https://en.wikipedia.org/wiki/Fast_multipole_method). Finally, we parallelize over all the targets using [KernelAbstractions.jl](https://github.com/JuliaGPU/KernelAbstractions.jl) which works on the GPU or multi-threaded CPU.
  2. The pressure projection step depends sensitively on the boundaries conditions, but these *cannot be set* since the unknown pressure generates vorticity on immersed bodies. We solve this problem using a matrix partition method, similar to the approach used for partitioned Fluid-Structure-Interaction (FSI) methods. In practise we see the Multigrid pressure solver actually converges *faster* with `BiotSavartBcs` than with reflection BCs.
 
-The resulting simulation update is very fast, especially with large 3D grids on the GPU - exactly where the ability to use a snug domain is the most important. See the paper for detailed methods, examples, and computational benchmarks. 
+The resulting simulation update is very fast, especially with large 3D grids on the GPU - exactly where the ability to use a snug domain is the most important. See the paper for detailed methods, examples, and computational benchmarks.
 
 ### Mixed domain boundary conditions
 
@@ -60,7 +60,21 @@ sim_sym_walls = sym_square(96,mem=CuArray); # no difference!
 sim_step!(sim_sym_walls,2,remeasure=false) # BiotBCs now see reflected domain
 ```
 
-There is currently no way to implement mixed Biot-Savart & periodic boundary conditions and passing a `BiotSimulation(args...;perdir::NTuple)` will be ignored.
+#### Periodic boundary conditions
+
+If we want to model a flow that is periodic in one direction, we can use the `perdir` keyword argument to specify the periodic direction. For example, if we want to model a flow that is periodic in the z-direction, we can do:
+```julia
+sim_periodic = BiotSimulation((2N,N,N÷2),(U,0,0),L;
+                              ν=U*2L/Re,body,mem,T,
+                              perdir=(3,),nimages=4)
+```
+which creates a simulation with periodic boundary conditions in the z-direction. Internally, this switches off the Biot-Savart boundary update on the ±`dir` domain walls, similar to the symmetric case. Periodic conditions are enforced there in the classical way.
+
+There is no need to _manually_ add the periodic contributions as we did for the symmetry case above; the `perdir` keyword argument automatically adds the periodic contributions to the Biot-Savart update. The `nimages` keyword argument specifies how many periodic images to use in the Biot-Savart update. The more images, the more accurate the update, but also the more expensive. We find that `nimages=4` is a good compromise between accuracy and cost.
+
+
+> [!NOTE]
+> Currently, periodic and symmetric conditions are __not__ compatible with each other, so you __cannot__ use both at the same time.
 
 ### Gallery
 

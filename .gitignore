@@ -3,3 +3,10 @@ examples/Manifest.toml
 *.jld2
 *.png
 *.gif
+*.mp4
+*.pvd
+*.pvsm
+*.vti
+*.vtm
+*.vts
+vtk_data/
