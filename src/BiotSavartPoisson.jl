@@ -9,7 +9,7 @@ Fields:
 - `ω`    : multi-level vorticity (top level aliases `flow.f`)
 - `tar`  : domain boundary target index arrays per multigrid level
 - `ftar` : flattened target list for kernel dispatch
-- `p`    : pressure solution accumulator 
+- `p`    : pressure solution accumulator
 - `fmm`  : use Fast Multi-level Method (`true`) or tree-sum (`false`)
 """
 struct BiotSavartPoisson{T,S,V} <: AbstractPoisson{T,S,V}
@@ -31,12 +31,16 @@ end
 WaterLily.update!(b::BiotSavartPoisson) = WaterLily.update!(b.ml)
 
 """
-    mom_project!(a::AbstractFlow, b::BiotSavartPoisson, w, t; tol=1e-4, itmx=32)
+    mom_project!(a::AbstractFlow, b::BiotSavartPoisson, w, t; tol=2e-3, itmx=32)
 
 Custom project method for Biot-Savart BCs. Solves for pressure with a multigrid V-cycle, applying biot_BC! to update the boundary velocity and residual at each iteration.
+Convergence uses the same grid-independent criterion as `WaterLily.solver!`: `tol` is the
+max-norm (worst-cell) tolerance `max|r| < tol` — the knob to tune, since the max-norm is
+the binding constraint on refined grids — with the mean residual additionally required to
+sit 10x below it, `Σ|r|/N < tol/10` (same units as the max-norm).
 Note: a.p is used as the incremental pressure solution for each V-cycle, while b.p accumulates the total pressure solution.
 """
-function WaterLily.mom_project!(a::AbstractFlow{N}, b::BiotSavartPoisson, w, t, tol=1e-4,itmx=32) where N
+function WaterLily.mom_project!(a::AbstractFlow{N}, b::BiotSavartPoisson, w, t, tol=2e-3,itmx=32) where N
     dt = w*a.Δt[end]; a.p .*= dt  # Scale p *= w*Δt
     U = BCTuple(a.uBC,t,N)        # BC tuple for current time step
     b.p .= 0; project_update!(a,b)                              # Project out initial μ₀∇p
@@ -47,22 +51,24 @@ function WaterLily.mom_project!(a::AbstractFlow{N}, b::BiotSavartPoisson, w, t, 
     @inside top.r[I] = ifelse(top.iD[I]==0,0,WaterLily.div(I,a.u))
     fix_resid!(top.r,a.u,b.tar[1]) # only fix on the boundaries
 
-    nᵖ,nᵇ,r₂ = 0,0,L₂(top)
-    @log ", $nᵖ, $(WaterLily.L∞(top)), $r₂, $nᵇ\n"
+    # criterion: max-norm max|r| < tol and mean residual Σ|r|/N < tol/10
+    r₁tol = WaterLily.l1n_tol(top, tol); r∞tol = tol
+    nᵖ,nᵇ,r₁ = 0,0,WaterLily.L₁(top); r∞ = WaterLily.L∞(top)
+    @log ", $nᵖ, $r∞, $r₁, $nᵇ\n"
     while nᵖ<itmx
         # V-cycle with fixed BCs until the residual drops >10x
-        rtol = max(tol,0.1r₂)
+        rtol = max(r₁tol,0.1r₁)
         while nᵖ<itmx
             WaterLily.Vcycle!(b.ml); WaterLily.smooth!(top)
-            r₂ = L₂(top); nᵖ+=1
-            r₂<rtol && break
+            r₁ = WaterLily.L₁(top); nᵖ+=1
+            r₁<rtol && break
         end
         # Update the BCs with Biot-Savart (which requires updating u,p,ω) and repeat until convergence
         project_update!(a,b) # Update u,p
         fill_ω!(b.ω,a.u); biotBC_r!(top.r,a.u,U,b.ω,b.tar,b.ftar;fmm=b.fmm) # Update BC+residual
-        r₂ = L₂(top); nᵇ+=1
-        @log ", $nᵖ, $(WaterLily.L∞(top)), $r₂, $nᵇ\n"
-        r₂<tol && break
+        r₁ = WaterLily.L₁(top); r∞ = WaterLily.L∞(top); nᵇ+=1
+        @log ", $nᵖ, $r∞, $r₁, $nᵇ\n"
+        (r₁<r₁tol && r∞<r∞tol) && break
     end
     push!(b.ml.n,nᵖ)
     pflowBC!(a.u)     # Update ghost BCs (domain is already correct)
