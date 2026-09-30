@@ -4,7 +4,7 @@ using WaterLily,BiotSavartBCs,CUDA,StaticArrays
 linear(t)=min(t,one(t))
 WaterLily.CFL(a::Flow) = WaterLily.CFL(a;Δt_max=1) # good idea when accelerating from rest
 
-function kirigami(N;H=0,rings=16,U=1,Re=1e4,mem=Array,T=Float32,Ux=linear,R=T(2N/3),ϵ=T(1/2),half_thk=ϵ+1/T(√2),fall=false)
+function kirigami(N;H=0,rings=16,U=1,Re=1e4,mem=Array,T=Float32,Ux=linear,R=T(2N/3),ϵ=T(1/2),half_thk=max(ϵ+1/T(√2),0.01R),fall=false)
     δR = R/rings; δH = R*H/rings^2; x₀ = max(R*(1-H)/2,δR+half_thk-min(0,R*H))
     @inline mapped(f) = AutoBody(f,(x,t)->x-SA[x₀,0,0])
     @inline ring(R₀,R₁,x₀,x₁,ϕ) = mapped() do (x,y,z),t

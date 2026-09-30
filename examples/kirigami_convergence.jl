@@ -8,10 +8,11 @@ cm = inch / 2.54
 H, rings = 1, 8
 
 # --- flow slice (N=256, θ=π/8 azimuthal cut) ---
+# new fixed-thickness-rule N=256 rerun's vtk output
 Nflow = 256
 R = 2Nflow / 3
 
-vtk = VTKFile("vtk_data/kirigami_N$(Nflow)_H$(H)_rings$(rings)_000000.vti")
+vtk = VTKFile("examples/vtk_data/kirigami_N$(Nflow)_H$(H)_rings$(rings)_000000.vti")
 pd = get_point_data(vtk)
 ω = get_data_reshaped(pd["ω"])   # (3, nx, ny, nz)
 d = get_data_reshaped(pd["d"])   # (nx, ny, nz) signed distance to body
@@ -46,9 +47,10 @@ thresh = 0.02  # mask near-zero band: mostly far-field solver noise, not real st
 flowdata = clamp.(ωθ, -clim, clim)
 flowdata[abs.(ωθ).<thresh] .= NaN
 
-# --- convergence sweep (N=64..256) ---
-Ns = (64, 96, 128, 192, 256)
-data = Dict(N => load_object("kirigami_N$(N)_H$(H)_rings$(rings)_hist.jld2") for N in Ns)
+# --- convergence sweep (N=64..384), fixed-thickness-rule reruns for N=192,256,384 ---
+# all six hist files loaded from examples/ (where the new runs + copied old 64/96/128 were placed)
+Ns = (64, 96, 128, 192, 256, 384)
+data = Dict(N => load_object("examples/kirigami_N$(N)_H$(H)_rings$(rings)_hist.jld2") for N in Ns)
 Nref = last(Ns)
 Cd_ref = data[Nref].Cd
 coarse = collect(Ns[1:end-1])
@@ -58,7 +60,8 @@ err = [sqrt(sum((data[N].Cd .- Cd_ref) .^ 2) / sum(Cd_ref .^ 2)) for N in coarse
 f = Figure(size=(22cm, 14cm), figure_padding=6, fontsize=9pt)
 
 axflow = Axis(f[2, 1:4], aspect=DataAspect(), xlabel="X/R", ylabel="r/R (θ=π/8)")
-co = contourf!(axflow, X, Rr, flowdata, levels=range(-clim, clim, 17), colormap=:RdBu)
+co = contourf!(axflow, X, Rr, flowdata, levels=range(-clim, clim, 17), colormap=:RdBu,
+    extendlow=:auto, extendhigh=:auto)
 contour!(axflow, X, Rr, body, levels=[0], color=:black, linewidth=1.5)
 Colorbar(f[1, 1:4], co, vertical=false, label="Azimuthal vorticity ω_θ", labelsize=12, width=Relative(0.6))
 xlims!(axflow, extrema(X)...)
@@ -76,7 +79,7 @@ xlims!(ax1, 0, 3)
 
 Rcoarse = round.(Int, 2 .* coarse ./ 3)
 ax2 = Axis(f[3, 3], xlabel="Grid resolution R", ylabel="log₁₀(L2 error)",
-    xscale=log10, xticks=(Rcoarse, string.(Rcoarse)), yticks=[-1, -2])
+    xscale=log10, xticks=(Rcoarse, string.(Rcoarse)), yticks=[-1, -1.5, -2])
 scatter!(ax2, Rcoarse, log10.(err), color=:black, markersize=10)
 lines!(ax2, Rcoarse, log10.(err), color=:black, linewidth=1)
 Nref_line = range(Rcoarse[1], Rcoarse[end], 50)
@@ -86,7 +89,7 @@ lines!(ax2, Nref_line, o1, color=:gray, linestyle=:dot, linewidth=1, label="1st 
 lines!(ax2, Nref_line, o2, color=:gray, linestyle=:dash, linewidth=1, label="2nd order")
 axislegend(ax2, position=:lb, rowgap=-6, patchlabelgap=2, patchsize=(16, 20),
     padding=(10, 10, -2, -2), framevisible=false)
-ylims!(ax2, -2, maximum(log10.(err)) + 0.05)
+ylims!(ax2, minimum(log10.(err)) - 0.1, maximum(log10.(err)) + 0.05)
 
 rowgap!(f.layout, 10)
 colgap!(f.layout, 10)
