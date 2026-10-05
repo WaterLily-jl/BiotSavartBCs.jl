@@ -1,9 +1,8 @@
 # compute ω=∇×u excluding boundaries
 import WaterLily: permute,∂
 fill_ω!(ml::Tuple,u,perdir=()) = (ω=first(ml); fill!(ω,zero(eltype(ω))); fill_ω!(ω,u,perdir); restrict!(ml))
-fill_ω!(ω::AbstractArray{<:Any,4},u,perdir=()) = @loop (ω[I,1] = centered_curl(1,I,u); ω[I,2] = centered_curl(2,I,u); ω[I,3] = centered_curl(3,I,u)) over I ∈ sources(size_u(ω)[1],perdir...)
-fill_ω!(ω::AbstractArray{<:Any,3},u,perdir=()) = @loop (ω[I,1] = centered_curl(3,I,u); ω[I,2] = zero(eltype(ω))) over I ∈ sources(size_u(ω)[1],perdir...)
-Base.@propagate_inbounds centered_curl(i,I,u) = (j=i%3+1; k=(i+1)%3+1; ∂(k,j,I,u)-∂(j,k,I,u))
+fill_ω!(ω::AbstractArray{<:Any,4},u,perdir=()) = @loop (ω[I,1],ω[I,2],ω[I,3]) = WaterLily.ω(I,u) over I ∈ sources(size_u(ω)[1],perdir...)
+fill_ω!(ω::AbstractArray{<:Any,3},u,perdir=()) = @loop (ω[I,1] = WaterLily.ω(I,u); ω[I,2] = zero(eltype(ω))) over I ∈ sources(size_u(ω)[1],perdir...)
 
 # Incompressible & irrotational ghosts
 function pflowBC!(u)
