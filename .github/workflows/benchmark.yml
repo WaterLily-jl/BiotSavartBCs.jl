@@ -1,0 +1,93 @@
+name: Benchmark
+
+# On-demand benchmarks of a pull request against its base branch with WaterLily-Benchmarks, both on WaterLily master:
+# a maintainer comments `/benchmark`, optionally followed by benchmark.sh arguments (e.g. `/benchmark -c "jelly-biotsavart" -r 3`),
+# or runs it from the Actions tab. Default: jelly-biotsavart and sphere-biotsavart on CPUx01 and CPUx02, 2 repetitions;
+# the report is a PR comment that later runs update. Only branches of this repository can run (not forks).
+# This file always comes from main, but the PR code does run: read the diff first.
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number
+        required: true
+        type: string
+      args:
+        description: benchmark.sh arguments (empty means the default)
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+  issues: write         # reaction
+  pull-requests: write  # report comment
+
+concurrency:
+  group: benchmark-${{ github.event.issue.number || inputs.pr }}
+  cancel-in-progress: false
+
+jobs:
+  benchmark:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.issue.pull_request &&
+       startsWith(github.event.comment.body, '/benchmark') &&
+       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association))
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Resolve the PR and the arguments
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR: ${{ github.event.issue.number || inputs.pr }}
+          REQUEST: ${{ github.event.comment.body || inputs.args }}
+        run: |
+          args=${REQUEST%%$'\n'*}; args=${args#/benchmark}  # first line, command removed
+          [[ $args =~ ^[A-Za-z0-9\ ,._=\"-]*$ ]] || { echo "::error::unexpected characters in the arguments: $args"; exit 1; }
+          info=$(gh pr view "$PR" --json baseRefName,headRefName,headRefOid,isCrossRepository \
+            --jq '"\(.baseRefName) \(.headRefName) \(.headRefOid) \(.isCrossRepository)"')
+          read -r base head sha fork <<< "$info"
+          # The action checks out this repository's branches only, so the head of a fork is not there
+          [[ $fork == false ]] || { echo "::error::PR #$PR comes from a fork; push its branch here or run benchmark.sh locally"; exit 1; }
+          [[ $head =~ ^[A-Za-z0-9._-]+$ ]] || head=${sha:0:12}  # the arguments cannot hold a `/`
+          echo "number=$PR" >> "$GITHUB_OUTPUT"
+          echo "args=-c \"jelly-biotsavart sphere-biotsavart\" -bs \"$base $head\" $args" >> "$GITHUB_OUTPUT"  # later values win
+
+      - name: Acknowledge the request
+        if: github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X POST "repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions" -f content=rocket
+
+      - name: Check out WaterLily master
+        uses: actions/checkout@v7
+        with:
+          repository: WaterLily-jl/WaterLily.jl
+          ref: master
+          path: WaterLily.jl
+          fetch-depth: 0  # other refs can run with -w
+          persist-credentials: false
+
+      # The action checks out this repository in BiotSavartBCs.jl and pairs the -bs refs with the WaterLily ones
+      - name: Benchmark the base branch vs the PR
+        uses: WaterLily-jl/WaterLily-Benchmarks@main
+        with:
+          waterlily-dir: ${{ github.workspace }}/WaterLily.jl
+          base: master
+          head: master
+          args: ${{ steps.pr.outputs.args }}
+          pr: ${{ steps.pr.outputs.number }}
+          artifact: benchmark-pr-${{ steps.pr.outputs.number }}
+
+      - name: Report a failed run
+        if: failure() && steps.pr.outputs.number != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: >-
+          gh api -X POST "repos/$GITHUB_REPOSITORY/issues/${{ steps.pr.outputs.number }}/comments"
+          -f body="The benchmark run failed: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
