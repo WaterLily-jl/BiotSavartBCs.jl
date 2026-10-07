@@ -25,8 +25,14 @@ permissions:
   issues: write         # reaction
   pull-requests: write  # report comment
 
+# One benchmark per PR at a time. A group keeps a single pending run and cancels the older one, and every comment
+# starts a run, so only requests that the job runs share a group: another comment cannot replace a pending request.
 concurrency:
-  group: benchmark-${{ github.event.issue.number || inputs.pr }}
+  group: >-
+    ${{ (github.event_name == 'workflow_dispatch' ||
+    (github.event.issue.pull_request && startsWith(github.event.comment.body, '/benchmark') &&
+    contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)))
+    && format('benchmark-{0}', github.event.issue.number || inputs.pr) || format('ignored-{0}', github.run_id) }}
   cancel-in-progress: false
 
 jobs:
@@ -54,7 +60,9 @@ jobs:
           read -r base head sha fork <<< "$info"
           # The action checks out this repository's branches only, so the head of a fork is not there
           [[ $fork == false ]] || { echo "::error::PR #$PR comes from a fork; push its branch here or run benchmark.sh locally"; exit 1; }
-          [[ $head =~ ^[A-Za-z0-9._-]+$ ]] || head=${sha:0:12}  # the arguments cannot hold a `/`
+          # the arguments cannot hold a `/`: such a branch runs under its commit
+          [[ $head =~ ^[A-Za-z0-9._-]+$ ]] || head=${sha:0:12}
+          [[ $base =~ ^[A-Za-z0-9._-]+$ ]] || base=$(gh api "repos/$GH_REPO/branches/$base" --jq '.commit.sha[0:12]')
           echo "number=$PR" >> "$GITHUB_OUTPUT"
           echo "args=-c \"jelly-biotsavart sphere-biotsavart\" -bs \"$base $head\" $args" >> "$GITHUB_OUTPUT"  # later values win
 
