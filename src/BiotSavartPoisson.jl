@@ -44,7 +44,7 @@ function WaterLily.mom_project!(a::AbstractFlow{N}, b::BiotSavartPoisson, w::Int
     # Set residual
     top = b.ml.levels[1]; top.r .= 0
     Dp = diagonal(top)  # Poisson matrix diagonal
-    @inside top.r[I] = ifelse(top.iD[I]==0,0,div(I,a.u)-δv(Dp,I)*div(I,a.V)) # flow divergence, not BDIM-ϵ stretching
+    @inside top.r[I] = ifelse(top.iD[I]==0,zero(eltype(top.r)),div(I,a.u)-δv(Dp,I)*div(I,a.V)) # flow divergence, not BDIM-ϵ stretching
     fix_resid!(top.r,a.u,b.tar[1]) # only fix on the boundaries
 
     r₁tol = WaterLily.l1n_tol(top, tol)
