@@ -2,7 +2,6 @@ module BiotSavartBCs
 
 using WaterLily
 
-include("ka.jl")
 include("geom.jl")
 include("multilevel.jl")
 

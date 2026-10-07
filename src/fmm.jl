@@ -25,7 +25,7 @@ end
 shifted(T::CartesianIndex{N},i) where N = SVector{N,Float32}(ntuple(j-> j==i ? (T.I[i]==1 ? 0.5 : -0.5) : 0,N))
 
 # Induced velocity on targets, including the images across the `symmetry` faces
-induced!(ml,flat_targets,perdir=(),symmetry=()) = @vecloop _induced!(ml,lT,perdir,symmetry) over lT ∈ flat_targets
+induced!(ml,flat_targets,perdir=(),symmetry=()) = @loop _induced!(ml,lT,perdir,symmetry) over lT ∈ flat_targets
 @inline _induced!(ml,lT,perdir,symmetry) = ((l,T) = lT; ml[l][T] = isempty(perdir) ? images(ml[l],T,symmetry,l,length(ml)) : periodic(ml[l],T,l,length(ml),perdir...))
 
 # Symmetry planes on domain `faces`: sum the velocity induced at the target and all of its images

@@ -2,19 +2,20 @@ using BiotSavartBCs
 using Test
 using WaterLily
 
-using BiotSavartBCs: @vecloop,inside_u,restrict!,project!,down,front,step
+using WaterLily: @loop
+using BiotSavartBCs: inside_u,restrict!,project!,down,front,step
 using BiotSavartBCs: MLArray,collect_targets,flatten_targets,fill_ω!,biotBC!,pflowBC!
 @testset "util.jl" begin
     a = zeros(Int,(4,4,6,3))
-    @vecloop a[I] += 1 over I in inside_u(a,buff=2)
+    @loop a[I] += 1 over I in inside_u(a,buff=2)
     @test sum(a) == 0
-    @vecloop a[I] += 1 over I in inside_u(a)
+    @loop a[I] += 1 over I in inside_u(a)
     @test sum(a) == length(inside_u(a)) == 2*2*4*3
 
     a = zeros(Int,(10,10,18,3))
     ml=MLArray(a)
     @test length(ml)==3
-    @vecloop a[I] += 1 over I in inside_u(a)
+    @loop a[I] += 1 over I in inside_u(a)
     @test sum(first(ml)) == length(inside_u(a))
     restrict!(ml)
     @test sum(last(ml)) == length(inside_u(a))
@@ -29,7 +30,7 @@ using BiotSavartBCs: MLArray,collect_targets,flatten_targets,fill_ω!,biotBC!,pf
     T,i = front(Ti),last(Ti)
     @test CartesianIndex(down(T),i)==last(tar[3])
     
-    @vecloop ml[3][I] += 16 over I in tar[3]
+    @loop ml[3][I] += 16 over I in tar[3]
     project!(ml,tar)
     @test ml[2][Ti] == 4
 
@@ -39,7 +40,7 @@ using BiotSavartBCs: MLArray,collect_targets,flatten_targets,fill_ω!,biotBC!,pf
     a = zeros(Int,(34,34,2))
     ml=MLArray(a)
     @test length(ml)==3 # much bigger dis in 2D
-    @vecloop a[I] += 1 over I in inside_u(a)
+    @loop a[I] += 1 over I in inside_u(a)
     @test sum(first(ml)) == length(inside_u(a))
     restrict!(ml)
     @test sum(last(ml)) == length(inside_u(a))
@@ -50,7 +51,7 @@ using BiotSavartBCs: MLArray,collect_targets,flatten_targets,fill_ω!,biotBC!,pf
     T,i = front(Ti),last(Ti)
     @test CartesianIndex(down(T),i)==last(tar[3])
     
-    @vecloop ml[3][I] += 4 over I in tar[3]
+    @loop ml[3][I] += 4 over I in tar[3]
     project!(ml,tar)
     @test ml[2][Ti] == 2
 end
