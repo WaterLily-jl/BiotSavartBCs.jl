@@ -13,6 +13,9 @@ struct BiotSavartPoisson{T,S,V} <: AbstractPoisson{T,S,V}
     p    :: AbstractArray  # pressure solution accumulator
     fmm  :: Bool           # use Fast Multi-level Method (`true`) or tree-sum (`false`)
     sym  :: Tuple          # symmetry plane faces
+    own  :: NTuple         # each level's own target sums from the last full FMM
+    box  :: Base.RefValue{CartesianIndices} # where a pressure update changes ω, see `near_targets`
+    idx  :: Base.RefValue{AbstractVector}   # flat targets that can see that box
     function BiotSavartPoisson(flow; nonbiotfaces=(), fmm=true, mem=Array, symmetry=())
         flow.exitBC && throw(ArgumentError("exitBC=true is ignored when using Biot-Savart BCs"))
         perdir = flow.perdir
@@ -23,10 +26,28 @@ struct BiotSavartPoisson{T,S,V} <: AbstractPoisson{T,S,V}
         tar  = mem.(collect_targets(ω, (nonbiotfaces...,symmetry...,perdir...,(-).(perdir)...))) # no targets on these faces
         ftar = flatten_targets(tar)
         p   = copy(flow.p)
-        new{eltype(flow.p),typeof(flow.p),typeof(flow.μ₀)}(ml,ω,tar,ftar,p,fmm,symmetry)
+        own = map(t->similar(t,eltype(flow.p)),tar)
+        set_idx!(new{eltype(flow.p),typeof(flow.p),typeof(flow.μ₀)}(ml,ω,tar,ftar,p,fmm,symmetry,own,Ref{CartesianIndices}(),Ref{AbstractVector}()))
     end
 end
-WaterLily.update!(b::BiotSavartPoisson) = WaterLily.update!(b.ml)
+WaterLily.update!(b::BiotSavartPoisson) = (WaterLily.update!(b.ml); set_idx!(b))
+function set_idx!(b)
+    B = transition_box(b.ml.levels[1].L,b.ml.perdir)
+    isassigned(b.idx) && B==b.box[] && return b
+    b.box[],b.idx[] = B,near_targets(B,b.ω,b.ftar,b.ml.perdir); b
+end
+function near_targets(B,ω,ftar,perdir)
+    depth = length(ω); isempty(B) && return similar(ftar,Int,0)
+    boxes,domains = ntuple(l->coarsen(B,l),depth),map(a->inside(size_u(a)[1]),ω)
+    findall(((l,T),)->l==depth || !isempty(inR(remaining(front(T),domains[l],perdir...),boxes[l])),ftar)
+end
+function transition_box(μ₀,perdir)
+    R = CartesianIndices(μ₀); none = (front(last(R)),front(first(R)))
+    bc = Broadcast.instantiate(Broadcast.broadcasted((x,I)->0<x<1 ? (front(I),front(I)) : none,μ₀,R))
+    lo,hi = mapreduce(identity,((a,b),(c,d))->(min(a,c),max(b,d)),bc;init=none)
+    CartesianIndices(ntuple(d->d∈perdir ? (1:size(μ₀,d)) : lo[d]-1:hi[d]+1,ndims(μ₀)-1))
+end
+coarsen(B,l) = l==1 ? B : coarsen(down(B),l-1)
 import WaterLily: div,diagonal,δv,perBC!
 
 """
@@ -39,7 +60,7 @@ function WaterLily.mom_project!(a::AbstractFlow{N}, b::BiotSavartPoisson, w::Int
     dt = a.Δt[end]/w; a.p .*= dt  # Scale p *= Δt/w
     U = BCTuple(a.uBC,t,N)        # BC tuple for current time step
     b.p .= 0; project_update!(a,b)                              # Project out initial μ₀∇p
-    fill_ω!(b.ω,a.u,a.perdir); biotBC!(a.u,U,b.ω,b.tar,b.ftar;fmm=b.fmm,a.perdir,symmetry=b.sym) # Apply domain BCs with fresh ω
+    fill_ω!(b.ω,a.u,a.perdir); biotBC!(a.u,U,b.ω,b.tar,b.ftar;fmm=b.fmm,a.perdir,symmetry=b.sym,own=b.own) # Apply domain BCs with fresh ω
 
     # Set residual
     top = b.ml.levels[1]; top.r .= 0
@@ -60,7 +81,7 @@ function WaterLily.mom_project!(a::AbstractFlow{N}, b::BiotSavartPoisson, w::Int
         end
         # Update the BCs with Biot-Savart (which requires updating u,p,ω) and repeat until convergence
         project_update!(a,b) # Update u,p
-        fill_ω!(b.ω,a.u,a.perdir); biotBC_r!(top.r,a.u,U,b.ω,b.tar,b.ftar;fmm=b.fmm,a.perdir,symmetry=b.sym) # Update BC+residual
+        fill_ω!(b.ω,a.u,a.perdir,b.box[]); biotBC_r!(top.r,a.u,U,b.ω,b.tar,b.ftar;fmm=b.fmm,a.perdir,symmetry=b.sym,own=b.own,idx=b.idx[]) # Update BC+residual
         r₁ = WaterLily.L₁(top); r∞ = WaterLily.L∞(top); nᵇ+=1
         @log ", $nᵖ, $r∞, $r₁, $nᵇ\n"
         (r₁<r₁tol && r∞<tol) && break

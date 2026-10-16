@@ -51,5 +51,10 @@ Base.@propagate_inbounds @fastmath function periodic(ω,Ti,l,depth,d)
     end; val
 end
 
-# Biot-Savart BC using FMM
-fmmBC!(ml,targets,flat_targets,perdir=(),symmetry=()) = (induced!(ml,flat_targets,perdir,symmetry);project!(ml,targets))
+# Biot-Savart BC using FMM, summing only the targets in `idx`: the rest keep their `own` sums
+function fmmBC!(ml,targets,flat_targets,perdir=(),symmetry=();own=(),idx=eachindex(flat_targets))
+    foreach((a,t,s)->(@loop a[t[j]] = s[j] over j ∈ CartesianIndices(t)),ml,targets,own)
+    induced!(ml,view(flat_targets,idx),perdir,symmetry)
+    foreach((a,t,s)->(@loop s[j] = a[t[j]] over j ∈ CartesianIndices(t)),ml,targets,own)
+    project!(ml,targets)
+end
