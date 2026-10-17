@@ -79,6 +79,7 @@ function hill_vortex(N;D=3N/4)
         cos(θ)*v_r-sin(θ)*v_θ
     end
 end
+divergence(u) = (r = zeros(eltype(u),size(u)[1:end-1]); WaterLily.@inside r[I] = WaterLily.div(I,u); r)
 
 using BiotSavartBCs: slice
 @testset "velocity.jl" begin
@@ -99,7 +100,8 @@ using BiotSavartBCs: slice
     BC!(u,U) # mess up BCs
 
     # Check domain uₙ using FMM-version of Biot-Savart BCs
-    biotBC!(u,U,ω,tar,ftar)
+    r = divergence(u); biotBC!(r,u,U,ω,tar,ftar)
+    @test maximum(abs,r.-divergence(u)) < 1e-5 # r tracks the flux change
     tol = (0.0222,0.0222,0.05) # Hill vortex has largest uₙ on z faces
     for i in 1:3, s in (2,N)
         mx = maximum(I->abs(u[I]-u₀[I]),slice(size(u),i,s))
@@ -123,13 +125,20 @@ using BiotSavartBCs: slice
 
     # Check domain uₙ using tree-version of Biot-Savart BCs
     BC!(u,U) # mess up BCs
-    biotBC!(u,U,ω,tar,ftar,fmm=false) # tree
+    r = divergence(u); biotBC!(r,u,U,ω,tar,ftar,fmm=false) # tree
+    @test maximum(abs,r.-divergence(u)) < 1e-5
     tol = (0.004,0.004,0.02) # No target interpolation error!
     for i in 1:3, s in (2,N)
         mx = maximum(I->abs(u[I]-u₀[I]),slice(size(u),i,s))
         # @show i,s,mx
         @test mx < tol[i]
     end
+
+    # A non-Biot face keeps U, so the other faces must balance its missing induced flux
+    tar = collect_targets(ω,(-3,)); ftar = flatten_targets(tar)
+    BC!(u,U); r = divergence(u); biotBC!(r,u,U,ω,tar,ftar)
+    @test maximum(abs,r.-divergence(u)) < 1e-5
+    @test abs(sum(r)) < 1e-4
 
     pow = 5; N = 2+2^pow; U = (1,0)
     u = Array{Float32}(undef,(N,N,2)); apply!(lamb_dipole(N),u); u₀ = copy(u)
@@ -141,12 +150,14 @@ using BiotSavartBCs: slice
     @test all(@. abs(sum(ω))<12e-5) # zero-sum at every level
 
     BC!(u,U) # mess up boundaries
-    biotBC!(u,U,ω,tar,ftar;fmm=true) # fix domain velocities
+    r = divergence(u); biotBC!(r,u,U,ω,tar,ftar;fmm=true) # fix domain velocities
+    @test maximum(abs,r.-divergence(u)) < 1e-5 # r tracks the flux change
     @test maximum(abs,(u.-u₀)[2:end,2:end-1,1])<0.028
     @test maximum(abs,(u.-u₀)[2:end-1,2:end,2])<0.025
     
     BC!(u,U) # mess up boundaries
-    biotBC!(u,U,ω,tar,ftar;fmm=false) # fix domain velocities
+    r = divergence(u); biotBC!(r,u,U,ω,tar,ftar;fmm=false) # fix domain velocities
+    @test maximum(abs,r.-divergence(u)) < 1e-5
     @test maximum(abs,(u.-u₀)[2:end,2:end-1,1])<0.0063 # No target interpolation error
     @test maximum(abs,(u.-u₀)[2:end-1,2:end,2])<0.003
     pflowBC!(u) # fix ghosts
@@ -154,6 +165,11 @@ using BiotSavartBCs: slice
     @test maximum(abs,(u.-u₀)[1,3:end-1,2])<0.003 # tangential
     @test maximum(abs,(u.-u₀)[1,3:end-2,1])<0.0064 # normal
     @test maximum(abs,(u.-u₀)[3:end-2,1,2])<0.003 # normal
+
+    tar = collect_targets(ω,(-1,)); ftar = flatten_targets(tar) # non-Biot inflow face
+    BC!(u,U); r = divergence(u); biotBC!(r,u,U,ω,tar,ftar)
+    @test maximum(abs,r.-divergence(u)) < 1e-5
+    @test abs(sum(r)) < 1e-4
 end
 
 @testset "pflowBC! edges and corners" begin
@@ -203,7 +219,7 @@ end
     N = 2+2^5; u₀ = Array{Float32}(undef,(N,N,2)); apply!(lamb_dipole(N),u₀)
     u = zeros(Float32,N,N,10,3); for k in 1:10; u[:,:,k,1:2] .= u₀; end
     ω = MLArray(zeros(Float32,N,N,10,3),(3,)); tar = collect_targets(ω,(3,-3)); ftar = flatten_targets(tar)
-    fill_ω!(ω,u,(3,)); BC!(u,(1,0,0)); biotBC!(u,(1,0,0),ω,tar,ftar;perdir=(3,))
+    fill_ω!(ω,u,(3,)); BC!(u,(1,0,0)); biotBC!(divergence(u),u,(1,0,0),ω,tar,ftar;perdir=(3,))
     Δu = u[:,:,2:end-1,1:2] .- reshape(u₀,N,N,1,2)
     @test maximum(abs,Δu[2:end,2:end-1,:,1])<0.04 && maximum(abs,Δu[2:end-1,2:end,:,2])<0.02 # as good as 2D
 

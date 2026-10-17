@@ -28,10 +28,10 @@ pC,uC,ωC = fill_hill(N,D,T=Float32,mem=CuArray);
 U = SA[0.,0.,1.]
 tar = collect_targets(ω); ftar = flatten_targets(tar)
 tarC = CUDA.CuArray.(collect_targets(ω)); ftarC = flatten_targets(tarC)
-@btime biotBC!($u,$U,$ω,$tar,$ftar;fmm=false); # 2.501ms 3.77KiB
-@btime biotBC!($u,$U,$ω,$tar,$ftar;fmm=true); # 0.671ms 3.84KiB
-@btime CUDA.@sync biotBC!($uC,$U,$ωC,$tarC,$ftarC;fmm=false); # 1.102ms 4.84KiB
-@btime CUDA.@sync biotBC!($uC,$U,$ωC,$tarC,$ftarC;fmm=true); # 0.319ms 15.61KiB 
+@btime biotBC!($p,$u,$U,$ω,$tar,$ftar;fmm=false); # 2.501ms 3.77KiB
+@btime biotBC!($p,$u,$U,$ω,$tar,$ftar;fmm=true); # 0.671ms 3.84KiB
+@btime CUDA.@sync biotBC!($pC,$uC,$U,$ωC,$tarC,$ftarC;fmm=false); # 1.102ms 4.84KiB
+@btime CUDA.@sync biotBC!($pC,$uC,$U,$ωC,$tarC,$ftarC;fmm=true); # 0.319ms 15.61KiB 
 
 # timmings
 btime(b) = minimum(b).time
@@ -39,7 +39,8 @@ function btime_biotBC!(u,U,ω,targs,ftargs,dist;fmm=false)
     # we have to owerwrite the function before we call btime
     @eval BiotSavartBCs.close(T::CartesianIndex{3}) = T-$dist*oneunit(T):T+$dist*oneunit(T)
     # we do not want the compilation of the above function in the time
-    btime(@benchmark CUDA.@sync biotBC!($u,$U,$ω,$targs,$ftargs;fmm=$fmm))
+    r = fill!(similar(u,size(u)[1:end-1]),0)
+    btime(@benchmark CUDA.@sync biotBC!($r,$u,$U,$ω,$targs,$ftargs;fmm=$fmm))
 end
 
 # run some benchmark
@@ -67,7 +68,7 @@ function hill_error(u,ω,U=(0,0,1))
     ue = copy(u); u .= 0 # make sure it's empty
     # targets are the full domain, but we only care about a single slice
     R = map(ωᵢ->vcat(CartesianIndices(ωᵢ)...),ω); fR = flatten_targets(R)
-    biotBC!(u,U,ω,R,fR;fmm=false) # can only use tree
+    biotBC!(zeros(eltype(u),size(u)[1:end-1]),u,U,ω,R,fR;fmm=false) # can only use tree
     p = zeros(eltype(ue),(N,1,N))
     WaterLily.@loop (p[I] = d(J(I))>1 ? √sum(abs2,ue[J(I),:].-u[J(I),:]) : 0) over I ∈ CartesianIndices(p)
     return p

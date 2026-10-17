@@ -27,7 +27,8 @@ using BenchmarkTools,CUDA
 function btime_biotBC!(u,U,ω,targs,ftargs,dist;fmm=false)
     @eval BiotSavartBCs.close(T::CartesianIndex{2}) = T-$dist*oneunit(T):T+$dist*oneunit(T)
     # we do not want the compilation of the above function in the time
-    btime(@benchmark CUDA.@sync biotBC!($u,$U,$ω,$targs,$ftargs;fmm=$fmm))
+    r = fill!(similar(u,size(u)[1:end-1]),0)
+    btime(@benchmark CUDA.@sync biotBC!($r,$u,$U,$ω,$targs,$ftargs;fmm=$fmm))
 end
 
 btime(b) = minimum(b).time
@@ -35,10 +36,11 @@ import BiotSavartBCs: close,remaining
 function lamb_test(N,D,dist,U=(1,0);fmm=false)
     u,ω = fill_lamb(N,D); ue = copy(u)
     tar = collect_targets(ω); ftar = flatten_targets(tar)
-    time = btime(@benchmark CUDA.@sync biotBC!($u,$U,$ω,$tar,$ftar;fmm=$fmm))
+    r = zeros(eltype(u),size(u)[1:end-1])
+    time = btime(@benchmark CUDA.@sync biotBC!($r,$u,$U,$ω,$tar,$ftar;fmm=$fmm))
     # targets are the full domain
     R = map(ωᵢ->vcat(CartesianIndices(ωᵢ)...),ω); fR = flatten_targets(R)
-    biotBC!(u,U,ω,R,fR;fmm=fmm)
+    biotBC!(r,u,U,ω,R,fR;fmm=fmm)
     # error
     p = zeros(Float64,(N,N));
     sdf(I) = √sum(abs2,loc(0,I) .- (N-2)/2) - D/2
