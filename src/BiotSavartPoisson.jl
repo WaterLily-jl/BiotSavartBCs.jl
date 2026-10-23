@@ -49,11 +49,11 @@ coarsen(B,l) = l==1 ? B : coarsen(down(B),l-1)
 import WaterLily: div,δv,perBC!,mult,L₁,L∞,Vcycle!,smooth!
 
 """
-    mom_project!(a::AbstractFlow, b::BiotSavartPoisson, w::Int, t, tol=2e-3, itmx=32)
+    mom_project!(a::AbstractFlow, b::BiotSavartPoisson, w::Int, t; tol=2e-3, itmx=32)
 
 Projection with Biot-Savart BCs: `biotBC!` updates the domain BCs and residual between V-cycles.
 """
-function WaterLily.mom_project!(a::AbstractFlow{N}, b::BiotSavartPoisson, w::Int, t, tol=2e-3,itmx=32) where N
+function WaterLily.mom_project!(a::AbstractFlow{N}, b::BiotSavartPoisson, w::Int, t; tol=2e-3, itmx=32) where N
     dt = a.Δt[end]/w; a.p .*= dt
     U,top = BCTuple(a.uBC,t,N),b.ml.levels[1]
     perBC!(a.u,a.perdir); fill_ω!(b.ω,a.u,a.perdir); body_ω!(b,a)

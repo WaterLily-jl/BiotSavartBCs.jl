@@ -198,6 +198,8 @@ end
         @show sim.pois.ml.n
         @test !isempty(sim.pois.ml.n) # iteration count recorded after step
     end
+    sim = circ(64;fmm=true); WaterLily.mom_project!(sim.flow,sim.pois,1,0;itmx=0)
+    @test sim.pois.ml.n == [0] # keyword reaches the V-cycle loop
 
     sphere(D;fmm,m=3D÷2) = BiotSimulation((m,m,m), (1,0,0), D; body=AutoBody((x,t)->√sum(abs2,x .- m/2)-D/2),ν=D/1e4,fmm)
     for fmm in (true,false)

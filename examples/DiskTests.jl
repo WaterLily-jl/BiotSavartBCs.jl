@@ -1,7 +1,5 @@
 using WaterLily,StaticArrays,CUDA,BiotSavartBCs
-# the paper's results need a tighter pressure tolerance than the 2e-3 default
-WaterLily.solver!(ml::MultiLevelPoisson) = WaterLily.solver!(ml;tol=5e-5)
-WaterLily.mom_project!(a::AbstractFlow,b::BiotSavartBCs.BiotSavartPoisson,w::Int,t) = WaterLily.mom_project!(a,b,w,t,5e-5,32)
+const poisson_kwargs = (;tol=5e-5) # the paper's results need a tighter pressure tolerance than the 2e-3 default
 using JLD2,Plots
 using Logging; disable_logging(Logging.Debug)
 figdir = joinpath(@__DIR__,"..","tex","fig") # paper figures are written here
@@ -34,7 +32,7 @@ for (Dim,use_biotsavart,dist,fmm) ∈ params
     WaterLily.logger(fname*".log")
     @time for t in 1:6
         while sim_time(sim)<t
-            sim_step!(sim;remeasure=false)
+            sim_step!(sim;remeasure=false,poisson_kwargs)
             f = 2WaterLily.pressure_force(sim)/R^(Dim-1)
             push!(forces,[sim_time(sim),f[1]])
         end
