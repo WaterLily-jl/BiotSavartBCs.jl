@@ -1,7 +1,7 @@
 # compute ω=∇×u excluding boundaries
 import WaterLily: permute,∂,face
-fill_ω!(ml::Tuple,u,perdir=()) = (ω=first(ml); fill!(ω,zero(eltype(ω))); fill_ω!(ω,u,perdir); restrict!(ml))
-fill_ω!(ml::Tuple,u,perdir,R) = (ω=first(ml); fill_ω!(ω,u,perdir,inR(R,sources(size_u(ω)[1],perdir...))); restrict!(ml,R)) # refresh R only
+fill_ω!(ml::Tuple,u,perdir=(),src=sources(size_u(first(ml))[1],perdir...)) = (ω=first(ml); fill!(ω,zero(eltype(ω))); fill_ω!(ω,u,perdir,src); restrict!(ml))
+fill_ω!(ml::Tuple,u,perdir,src,R) = (ω=first(ml); fill_ω!(ω,u,perdir,inR(R,src)); restrict!(ml,R)) # refresh R only
 fill_ω!(ω::AbstractArray{<:Any,4},u,perdir=(),R=sources(size_u(ω)[1],perdir...)) = @loop (ω[I,1],ω[I,2],ω[I,3]) = WaterLily.ω(I,vel(u)) over I ∈ R
 fill_ω!(ω::AbstractArray{<:Any,3},u,perdir=(),R=sources(size_u(ω)[1],perdir...)) = @loop (ω[I,1] = WaterLily.ω(I,vel(u)); ω[I,2] = zero(eltype(ω))) over I ∈ R
 
@@ -11,35 +11,36 @@ Base.@propagate_inbounds Base.getindex(a::Projected,I::CartesianIndex,i) = a.u[I
 @inline vel(u) = u
 @inline vel(u::Tuple) = Projected(u...)
 
-# Incompressible & irrotational ghosts
+# Incompressible & irrotational ghosts on the domain faces. Under MPI `u` is the block at offset o
+# of a domain of size G: the edge tests are in global indices and the seams are left to the halos
 import WaterLily: CIj
-function pflowBC!(u)
-    N,n = size_u(u)
+function pflowBC!(u,(G,o)=(size_u(u)[1],zero(CartesianIndex{ndims(u)-1})))
+    N,n = size_u(u); lo,hi = map(iszero,o.I),map((o,N,G)->o+N==G,o.I,N,G) # on the domain faces?
     for i ∈ 1:n
-        @loop pflow!(u,Ii,i,N) over Ii ∈ face(CartesianIndices((ntuple(k->k==i ? (1:1) : (1:N[k]),length(N))...,1:n)),i)
+        @loop pflow!(u,Ii,i,N,(G,o),lo[i],hi[i]) over Ii ∈ face(CartesianIndices((ntuple(k->k==i ? (1:1) : (lo[k] ? 1 : 2):(hi[k] ? N[k] : N[k]-1),length(N))...,1:n)),i)
     end
 end
-@inline function pflow!(u,Ii,i,N)
+@inline function pflow!(u,Ii,i,N,(G,o),lo,hi)
     I,j = front(Ii),last(Ii)
     if j≠i
-        u[Ii] = curl0(u,I,i,j,N,true); u[CIj(i,Ii,N[i])] = curl0(u,CIj(i,I,N[i]),i,j,N,false)
-    elseif any(ntuple(k->k≠i && I.I[k]∈(1,N[k]),length(N)))
-        u[Ii] = u[I+δ(i,I),i]
-    else
-        u[Ii] = sum(ntuple(k->k==i ? u[I+δ(i,I),i] : curl0(u,I+δ(k,I),i,k,N,true)-curl0(u,I,i,k,N,true),length(N)))
+        lo && (u[Ii] = curl0(u,I,i,j,(G,o),true)); hi && (u[CIj(i,Ii,N[i])] = curl0(u,CIj(i,I,N[i]),i,j,(G,o),false))
+    elseif any(ntuple(k->k≠i && I.I[k]+o[k]∈(1,G[k]),length(N)))
+        lo && (u[Ii] = u[I+δ(i,I),i])
+    elseif lo
+        u[Ii] = sum(ntuple(k->k==i ? u[I+δ(i,I),i] : curl0(u,I+δ(k,I),i,k,(G,o),true)-curl0(u,I,i,k,(G,o),true),length(N)))
     end
 end
-@inline function curl0(u,I,i,j,N,lower)
+@inline function curl0(u,I,i,j,(G,o),lower)
     F = lower ? I+δ(i,I) : I; J = lower ? F : I-δ(i,I)
-    u[J,j] - (lower ? 1 : -1)*(2<I.I[j]<N[j] ? u[F,i]-u[F-δ(j,F),i] : zero(eltype(u)))
+    u[J,j] - (lower ? 1 : -1)*(2<I.I[j]+o[j]<G[j] ? u[F,i]-u[F-δ(j,F),i] : zero(eltype(u)))
 end
 
 using Atomix
 # Biot-Savart BCs + residual update. FMM sums only the targets in `idx`: the rest keep their `own` sums
 function biotBC!(r,u,U,ml,tg;fmm=true,perdir=(),symmetry=(),idx=tg.blk)
-    (;tar,ftar,pmap,ltar,own,tot) = tg
-    fmm ? induced!(own,ml,ftar,idx,perdir,symmetry) : treeBC!(own,ml,tar[1],perdir)
-    copyto!(tot,global_allreduce(own)); fmm && project!(tot,pmap,tar) # Fill tot=uᵥ
+    (;lv,tar,ftar,pmap,ltar,own,tot) = tg
+    fmm ? induced!(own,ml,ftar,idx,lv,perdir,symmetry) : treeBC!(own,ml,tar[1],lv,perdir)
+    global_allreduce!(copyto!(tot,own)); fmm && project!(tot,pmap,tar) # Fill tot=uᵥ
     @loop _biotBC!(r,u,U,tot,kI) over kI ∈ ltar                      # Update the u,r
     fix_resid!(r,u,ltar)                                              # Fix u,r
 end

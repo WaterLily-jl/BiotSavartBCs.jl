@@ -30,17 +30,21 @@ remaining(T,R,d...) = up(close(CartesianIndex(fld.(T.I .+ 2,2)),down(R),d...))
 using Base.Iterators
 slice(dims::NTuple{N},i,s) where N = CartesianIndices((ntuple( k-> k==i ? (s:s) : (2:dims[k]-1), N-1)...,(i:i)))
 faces(dims::NTuple{N},off) where N = flatmap(i->flatmap(s->slice(dims,i,s), ((-i∈off ? () : (1,))...,(i∈off ? () : (dims[i],))...)),1:N-1)
-collect_targets(ω,off=()) = map(ωᵢ->collect(faces(size(ωᵢ),off)),ω)
+collect_targets(ω,off=(),dims=map(a->size_u(a)[1],ω)) = map(N->collect(faces((N...,length(N)),off)),dims)
 flatten_targets(targets) = mapreduce(((level,targets),)->map(T->(level,T),targets),vcat,enumerate(targets))
 
-# The targets of `ω` and their data: the flat list `ftar`, its interpolation map `pmap`, the level 1
-# targets `ltar` as (flat index, index), the flat target sums `own` and their totals `tot`, and `blk`,
-# the targets to sum over all of `ω`
-function target_data(ω,off=();mem=Array)
-    tar = collect_targets(ω,off); ftar = flatten_targets(tar)
-    pmap = project_map(ftar,map(a->size_u(a)[1],ω))
+# The targets of `ω` (in global indices under MPI) and their data: `lv` (see `grids`), the flat list
+# `ftar` and its interpolation map `pmap`, this rank's level 1 targets `ltar` as (flat index, index),
+# the flat target sums `own` over this rank's sources and their totals `tot`, the targets `blk` that
+# these sources reach, and the source cells `src`
+function target_data(ω,off=(),perdir=();mem=Array)
+    lv = grids(ω); (G,o),N = first(lv),size_u(first(ω))[1]
+    tar = collect_targets(ω,(off...,perdir...,(-).(perdir)...),map(first,lv)); ftar = flatten_targets(tar)
+    k,o′ = Dict(T=>j for (j,T) in enumerate(tar[1])),CartesianIndex(o,0)
+    ltar = [(k[T+o′],T) for T in faces(size(first(ω)),()) if haskey(k,T+o′)] # not the seams
     own = fill!(similar(first(ω),length(ftar)),0)
-    (tar=mem.(tar),ftar=mem(ftar),pmap=mem(pmap),ltar=mem(collect(enumerate(tar[1]))),own,tot=similar(own),blk=mem(collect(eachindex(ftar))))
+    (;lv,tar=mem.(tar),ftar=mem(ftar),pmap=mem(project_map(ftar,map(first,lv))),ltar=mem(ltar),own,tot=similar(own),
+      blk=mem(near_targets(CartesianIndices(N),lv,ftar,perdir)),src=inR(sources(G,perdir...) .- o,inside(N)))
 end
 
 @inline function image(T::CartesianIndex,dims,face=2)

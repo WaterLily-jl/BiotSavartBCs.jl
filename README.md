@@ -53,6 +53,15 @@ sim = BiotSimulation((4D,2D,D),(1,0,0),D;body,ν=D/Re,perdir=(3,))
 ```
 The Biot-Savart boundaries account for the (infinite) periodic images of the vorticity automatically.
 
+#### MPI
+
+With WaterLily's MPI extension, a `BiotSimulation` runs on a decomposed domain like a `Simulation`:
+```julia
+using WaterLily, BiotSavartBCs, ImplicitGlobalGrid, MPI
+sim = @distributed BiotSimulation((4D,2D,2D),(1,0,0),D;body,ν=D/Re)
+```
+Each rank sums its own vorticity into every Biot-Savart target and the ranks add their sums up, so the boundary velocities match a serial run.
+
 ### Gallery
 
 Here are a few renderings of the cool things you can do with [`WaterLily.jl`](https://github.com/WaterLily-jl/WaterLily.jl) and these new Biot-Savart BCs

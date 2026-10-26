@@ -220,7 +220,7 @@ end
     # Slab test: a z-uniform Lamb dipole in a z-periodic domain must induce the 2D velocity
     N = 2+2^5; u₀ = Array{Float32}(undef,(N,N,2)); apply!(lamb_dipole(N),u₀)
     u = zeros(Float32,N,N,10,3); for k in 1:10; u[:,:,k,1:2] .= u₀; end
-    ω = MLArray(zeros(Float32,N,N,10,3),(3,)); tg = target_data(ω,(3,-3))
+    ω = MLArray(zeros(Float32,N,N,10,3),(3,)); tg = target_data(ω,(),(3,))
     fill_ω!(ω,u,(3,)); BC!(u,(1,0,0)); biotBC!(divergence(u),u,(1,0,0),ω,tg;perdir=(3,))
     Δu = u[:,:,2:end-1,1:2] .- reshape(u₀,N,N,1,2)
     @test maximum(abs,Δu[2:end,2:end-1,:,1])<0.04 && maximum(abs,Δu[2:end-1,2:end,:,2])<0.02 # as good as 2D
@@ -250,7 +250,8 @@ using BiotSavartBCs: induced,image,images
     u = Array{Float32}(undef,(N,N,N,3)); apply!(hill_vortex(N),u)
     ω = MLArray(zeros(Float32,N,N,N,3)); fill_ω!(ω,u)
     ftar = flatten_targets(collect_targets(ω,(-2,-3)))
-    @test all(((l,T),)->images(ω[l],T,(-2,-3),l,length(ω)) ≈ sym_yz(ω[l],T,l,length(ω)), ftar)
+    lv = BiotSavartBCs.grids(ω)
+    @test all(((l,T),)->images(ω[l],T,(-2,-3),lv[l],l,length(ω)) ≈ sym_yz(ω[l],T,lv[l],l,length(ω)), ftar)
 
     # Half-domain circle with a symmetry plane on y=0 matches the full-domain circle
     D = 64; m = 2D

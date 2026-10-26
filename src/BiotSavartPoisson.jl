@@ -20,7 +20,7 @@ struct BiotSavartPoisson{T,S,V} <: AbstractPoisson{T,S,V}
         all(f->0<abs(f)≤ndims(flow.p), symmetry) && allunique(abs.(symmetry)) || throw(ArgumentError("symmetry faces must be valid with at most one per direction"))
         ml = MultiLevelPoisson(flow.p, flow.μ₀, flow.σ; perdir)
         ω  = MLArray(flow.f,perdir)   # top level aliases flow.f — no copy
-        tg = target_data(ω, (nonbiotfaces...,symmetry...,perdir...,(-).(perdir)...); mem) # no targets on these faces
+        tg = target_data(ω, (nonbiotfaces...,symmetry...), perdir; mem) # no targets on these faces
         set_idx!(new{eltype(flow.p),typeof(flow.p),typeof(flow.μ₀)}(ml,ω,tg,fmm,symmetry,Ref{CartesianIndices}(),Ref{AbstractVector}()))
     end
 end
@@ -28,11 +28,12 @@ WaterLily.update!(b::BiotSavartPoisson) = (WaterLily.update!(b.ml); set_idx!(b))
 function set_idx!(b)
     B = transition_box(b.ml.levels[1].L,b.ml.perdir)
     isassigned(b.idx) && B==b.box[] && return b
-    b.box[],b.idx[] = B,near_targets(B,b.ω,b.tg.ftar,b.ml.perdir); b
+    b.box[],b.idx[] = B,near_targets(B,b.tg.lv,b.tg.ftar,b.ml.perdir); b
 end
-function near_targets(B,ω,ftar,perdir)
-    depth = length(ω); isempty(B) && return similar(ftar,Int,0)
-    boxes,domains = ntuple(l->coarsen(B,l),depth),map(a->inside(size_u(a)[1]),ω)
+function near_targets(B,lv,ftar,perdir)
+    (G,o),depth = first(lv),length(lv); isempty(B) && return similar(ftar,Int,0)
+    B = CartesianIndices(ntuple(d->d∈perdir ? (1:G[d]) : B.indices[d] .+ o[d],length(G))) # global, and whole along perdir as the images see all of it
+    boxes,domains = ntuple(l->coarsen(B,l),depth),map(((G,_),)->inside(G),lv)
     findall(((l,T),)->l==depth || !isempty(inR(remaining(front(T),domains[l],perdir...),boxes[l])),ftar)
 end
 function transition_box(μ₀,perdir)
@@ -42,7 +43,7 @@ function transition_box(μ₀,perdir)
     CartesianIndices(ntuple(d->d∈perdir ? (1:size(μ₀,d)) : lo[d]-1:hi[d]+1,ndims(μ₀)-1))
 end
 coarsen(B,l) = l==1 ? B : coarsen(down(B),l-1)
-import WaterLily: div,δv,perBC!,mult,L₁,L∞,Vcycle!,smooth!
+import WaterLily: div,δv,mult,L₁,L∞,Vcycle!,smooth!
 
 """
     mom_project!(a::AbstractFlow, b::BiotSavartPoisson, w::Int, t; tol=2e-3, itmx=32)
@@ -52,7 +53,7 @@ Projection with Biot-Savart BCs: `biotBC!` updates the domain BCs and residual b
 function WaterLily.mom_project!(a::AbstractFlow{N}, b::BiotSavartPoisson, w::Int, t; tol=2e-3, itmx=32) where N
     dt = a.Δt[end]/w; a.p .*= dt
     U,top = BCTuple(a.uBC,t,N),b.ml.levels[1]
-    perBC!(a.u,a.perdir); fill_ω!(b.ω,a.u,a.perdir); body_ω!(b,a)
+    velocity_comm!(a.u,a.perdir); fill_ω!(b.ω,a.u,a.perdir,b.tg.src); body_ω!(b,a)
     @inside top.r[I] = ifelse(top.iD[I]==0,zero(eltype(top.r)),div(I,a.u)-δv(top.D,I)*div(I,a.V)-mult(I,top.L,top.D,a.p))
     biotBC!(b,a,U)
 
@@ -71,10 +72,10 @@ function WaterLily.mom_project!(a::AbstractFlow{N}, b::BiotSavartPoisson, w::Int
     end
     push!(b.ml.n,nᵖ)
     @loop a.u[Ii] -= a.μ₀[Ii]*∂(last(Ii),front(Ii),a.p) over Ii ∈ inside_u(a.u)
-    pflowBC!(a.u); perBC!(a.u,a.perdir); a.p ./= dt
+    velocity_halo!(a.u); pflowBC!(a.u,first(b.tg.lv)); velocity_comm!(a.u,a.perdir); a.p ./= dt
 end
 # ω of u-μ₀∇p, which differs from ∇×u only in the body box
-@inline body_ω!(b,a) = (perBC!(a.p,a.perdir); fill_ω!(b.ω,(a.u,a.μ₀,a.p),a.perdir,b.box[]))
+@inline body_ω!(b,a) = (comm!(a.p,a.perdir); fill_ω!(b.ω,(a.u,a.μ₀,a.p),a.perdir,b.tg.src,b.box[]))
 @inline biotBC!(b::BiotSavartPoisson,a,U;kw...) = biotBC!(b.ml.levels[1].r,a.u,U,b.ω,b.tg;fmm=b.fmm,a.perdir,symmetry=b.sym,kw...)
 BCTuple(f::Function,t::T,N) where T = ntuple(i->f(i,zero(SVector{N,T}),t),N)
 BCTuple(f::Tuple,t,N) = f
