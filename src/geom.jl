@@ -33,6 +33,16 @@ faces(dims::NTuple{N},off) where N = flatmap(i->flatmap(s->slice(dims,i,s), ((-i
 collect_targets(ω,off=()) = map(ωᵢ->collect(faces(size(ωᵢ),off)),ω)
 flatten_targets(targets) = mapreduce(((level,targets),)->map(T->(level,T),targets),vcat,enumerate(targets))
 
+# The targets of `ω` and their data: the flat list `ftar`, its interpolation map `pmap`, the level 1
+# targets `ltar` as (flat index, index), the flat target sums `own` and their totals `tot`, and `blk`,
+# the targets to sum over all of `ω`
+function target_data(ω,off=();mem=Array)
+    tar = collect_targets(ω,off); ftar = flatten_targets(tar)
+    pmap = project_map(ftar,map(a->size_u(a)[1],ω))
+    own = fill!(similar(first(ω),length(ftar)),0)
+    (tar=mem.(tar),ftar=mem(ftar),pmap=mem(pmap),ltar=mem(collect(enumerate(tar[1]))),own,tot=similar(own),blk=mem(collect(eachindex(ftar))))
+end
+
 @inline function image(T::CartesianIndex,dims,face=2)
     i = abs(face); normal = T.I[end]==i
     d = face>0 ? 2dims[i]-2T.I[i]-1 : 3-2T.I[i]+(normal && T.I[i]>1)

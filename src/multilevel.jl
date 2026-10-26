@@ -31,22 +31,25 @@ restrict!(a,b,R=inside(size_u(a)[1])) = @loop a[Ii] = restrict(Ii,b) over Ii ∈
     end; s
 end
 
-# Project(!) target data to a coarser level by (bi)linear interpolation
-project!(ml::Tuple,mltargets::Tuple) = for l ∈ reverse(1:lastindex(ml)-1)
-    project!(ml[l],ml[l+1],mltargets[l])
+# Project(!) the flat target data `v` from each coarser level by (bi)linear interpolation
+project!(v,pmap,tar) = for l ∈ reverse(1:lastindex(tar)-1)
+    @loop v[k] += interp(v,pmap[k]) over k ∈ sum(length,tar[1:l-1];init=0) .+ eachindex(tar[l])
 end
-project!(a,b,targets) = @loop a[Ii] += project(Ii,b) over Ii ∈ targets
-@fastmath function project(Ii::CartesianIndex{4},b)
-    I,i,N = front(Ii),last(Ii),size_u(b)[1]
+@fastmath @inline interp(v,(a,b,c,d)::NTuple{4}) = 0.015625f0@inbounds(9v[a]+3v[b]+3v[c]+v[d])
+@fastmath @inline interp(v,(a,b)::NTuple{2}) = 0.125f0@inbounds(3v[a]+v[b])
+# The flat indices of the coarse targets each flat target interpolates from (0 on the coarsest level)
+function project_map(ftar,dims)
+    k = Dict(lT=>j for (j,lT) in enumerate(ftar))
+    map(((l,T),)->map(C->get(k,(l+1,C),0),coarse(T,dims[min(l+1,end)])),ftar)
+end
+function coarse(Ii::CartesianIndex{4},N)
+    I,i = front(Ii),last(Ii)
     dj,dk = step(I,i%3+1,N),step(I,(i+1)%3+1,N)
-    I,I2,I3,I4 = down(I) .+ (zero(I),dj,dk,dj+dk)
-    0.015625f0@inbounds(9b[I,i]+3b[I2,i]+3b[I3,i]+b[I4,i])
+    map(J->CartesianIndex(J,i),down(I) .+ (zero(I),dj,dk,dj+dk))
 end
-@fastmath function project(Ii::CartesianIndex{3},b)
-    I,i,N = front(Ii),last(Ii),size_u(b)[1]
-    d = step(I,i%2+1,N)
-    I,I2 = down(I) .+ (zero(I),d)
-    0.125f0@inbounds(3b[I,i]+b[I2,i])
+function coarse(Ii::CartesianIndex{3},N)
+    I,i = front(Ii),last(Ii); d = step(I,i%2+1,N)
+    map(J->CartesianIndex(J,i),down(I) .+ (zero(I),d))
 end
 step(I,j,N,Ij=I.I[j]) = (Ij % 2 == 1 ?    # positive step,
     Ij ÷ 2 == N[j]-2 ? zero(I) : δ(j,I) : # don't step...

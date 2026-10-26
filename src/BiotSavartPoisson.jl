@@ -8,11 +8,9 @@ arguments. The fields are internal.
 struct BiotSavartPoisson{T,S,V} <: AbstractPoisson{T,S,V}
     ml   :: MultiLevelPoisson{T,S,V} # wrapped standard pressure solver
     ω    :: NTuple         # multi-level vorticity (top level aliases `flow.f`)
-    tar  :: NTuple         # domain boundary target index arrays per multigrid level
-    ftar :: AbstractVector # flattened target list for kernel dispatch
+    tg   :: NamedTuple     # domain boundary targets and their data, see `target_data`
     fmm  :: Bool           # use Fast Multi-level Method (`true`) or tree-sum (`false`)
     sym  :: Tuple          # symmetry plane faces
-    own  :: NTuple         # each level's own target sums from the last full FMM
     box  :: Base.RefValue{CartesianIndices} # where a pressure update changes ω, see `near_targets`
     idx  :: Base.RefValue{AbstractVector}   # flat targets that can see that box
     function BiotSavartPoisson(flow; nonbiotfaces=(), fmm=true, mem=Array, symmetry=())
@@ -22,17 +20,15 @@ struct BiotSavartPoisson{T,S,V} <: AbstractPoisson{T,S,V}
         all(f->0<abs(f)≤ndims(flow.p), symmetry) && allunique(abs.(symmetry)) || throw(ArgumentError("symmetry faces must be valid with at most one per direction"))
         ml = MultiLevelPoisson(flow.p, flow.μ₀, flow.σ; perdir)
         ω  = MLArray(flow.f,perdir)   # top level aliases flow.f — no copy
-        tar  = mem.(collect_targets(ω, (nonbiotfaces...,symmetry...,perdir...,(-).(perdir)...))) # no targets on these faces
-        ftar = flatten_targets(tar)
-        own = map(t->similar(t,eltype(flow.p)),tar)
-        set_idx!(new{eltype(flow.p),typeof(flow.p),typeof(flow.μ₀)}(ml,ω,tar,ftar,fmm,symmetry,own,Ref{CartesianIndices}(),Ref{AbstractVector}()))
+        tg = target_data(ω, (nonbiotfaces...,symmetry...,perdir...,(-).(perdir)...); mem) # no targets on these faces
+        set_idx!(new{eltype(flow.p),typeof(flow.p),typeof(flow.μ₀)}(ml,ω,tg,fmm,symmetry,Ref{CartesianIndices}(),Ref{AbstractVector}()))
     end
 end
 WaterLily.update!(b::BiotSavartPoisson) = (WaterLily.update!(b.ml); set_idx!(b))
 function set_idx!(b)
     B = transition_box(b.ml.levels[1].L,b.ml.perdir)
     isassigned(b.idx) && B==b.box[] && return b
-    b.box[],b.idx[] = B,near_targets(B,b.ω,b.ftar,b.ml.perdir); b
+    b.box[],b.idx[] = B,near_targets(B,b.ω,b.tg.ftar,b.ml.perdir); b
 end
 function near_targets(B,ω,ftar,perdir)
     depth = length(ω); isempty(B) && return similar(ftar,Int,0)
@@ -79,6 +75,6 @@ function WaterLily.mom_project!(a::AbstractFlow{N}, b::BiotSavartPoisson, w::Int
 end
 # ω of u-μ₀∇p, which differs from ∇×u only in the body box
 @inline body_ω!(b,a) = (perBC!(a.p,a.perdir); fill_ω!(b.ω,(a.u,a.μ₀,a.p),a.perdir,b.box[]))
-@inline biotBC!(b::BiotSavartPoisson,a,U;kw...) = biotBC!(b.ml.levels[1].r,a.u,U,b.ω,b.tar,b.ftar;fmm=b.fmm,a.perdir,symmetry=b.sym,own=b.own,kw...)
+@inline biotBC!(b::BiotSavartPoisson,a,U;kw...) = biotBC!(b.ml.levels[1].r,a.u,U,b.ω,b.tg;fmm=b.fmm,a.perdir,symmetry=b.sym,kw...)
 BCTuple(f::Function,t::T,N) where T = ntuple(i->f(i,zero(SVector{N,T}),t),N)
 BCTuple(f::Tuple,t,N) = f

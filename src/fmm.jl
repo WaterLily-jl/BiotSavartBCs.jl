@@ -25,8 +25,8 @@ end
 shifted(T::CartesianIndex{N},i) where N = SVector{N,Float32}(ntuple(j-> j==i ? (T.I[i]==1 ? 0.5 : -0.5) : 0,N))
 
 # Induced velocity on targets, including the images across the `symmetry` faces
-induced!(ml,flat_targets,perdir=(),symmetry=()) = @loop _induced!(ml,lT,perdir,symmetry) over lT ∈ flat_targets
-@inline _induced!(ml,lT,perdir,symmetry) = ((l,T) = lT; ml[l][T] = isempty(perdir) ? images(ml[l],T,symmetry,l,length(ml)) : periodic(ml[l],T,l,length(ml),perdir...))
+induced!(v,ml,ftar,idx,perdir=(),symmetry=()) = @loop _induced!(v,ml,ftar,k,perdir,symmetry) over k ∈ idx
+@inline _induced!(v,ml,ftar,k,perdir,symmetry) = ((l,T) = ftar[k]; v[k] = isempty(perdir) ? images(ml[l],T,symmetry,l,length(ml)) : periodic(ml[l],T,l,length(ml),perdir...))
 
 # Symmetry planes on domain `faces`: sum the velocity induced at the target and all of its images
 @inline images(ω,T,::Tuple{},args...) = induced(ω,T,args...)
@@ -49,12 +49,4 @@ Base.@propagate_inbounds @fastmath function periodic(ω,Ti,l,depth,d)
         R = (2ρ/ρ²+F(r[d]-1.5f0L)-F(r[d]+1.5f0L))/L
         val += permute((j,k)->ω[S,j]*R[k],i)/π/4
     end; val
-end
-
-# Biot-Savart BC using FMM, summing only the targets in `idx`: the rest keep their `own` sums
-function fmmBC!(ml,targets,flat_targets,perdir=(),symmetry=();own=(),idx=eachindex(flat_targets))
-    foreach((a,t,s)->(@loop a[t[j]] = s[j] over j ∈ CartesianIndices(t)),ml,targets,own)
-    induced!(ml,view(flat_targets,idx),perdir,symmetry)
-    foreach((a,t,s)->(@loop s[j] = a[t[j]] over j ∈ CartesianIndices(t)),ml,targets,own)
-    project!(ml,targets)
 end

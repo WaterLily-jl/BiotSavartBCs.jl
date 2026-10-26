@@ -35,22 +35,24 @@ end
 end
 
 using Atomix
-# Biot-Savart BCs + residual update
-function biotBC!(r,u,U,ml,targets,flat_targets;fmm=true,perdir=(),symmetry=(),kw...)
-    fmm ? fmmBC!(ml,targets,flat_targets,perdir,symmetry;kw...) : treeBC!(ml,targets[1],perdir) # Fill ml[targets]=uᵥ
-    @loop _biotBC!(r,u,U,ml[1],Ii) over Ii ∈ targets[1]         # Update the u,r
-    fix_resid!(r,u,targets[1])                                     # Fix u,r
+# Biot-Savart BCs + residual update. FMM sums only the targets in `idx`: the rest keep their `own` sums
+function biotBC!(r,u,U,ml,tg;fmm=true,perdir=(),symmetry=(),idx=tg.blk)
+    (;tar,ftar,pmap,ltar,own,tot) = tg
+    fmm ? induced!(own,ml,ftar,idx,perdir,symmetry) : treeBC!(own,ml,tar[1],perdir)
+    copyto!(tot,global_allreduce(own)); fmm && project!(tot,pmap,tar) # Fill tot=uᵥ
+    @loop _biotBC!(r,u,U,tot,kI) over kI ∈ ltar                      # Update the u,r
+    fix_resid!(r,u,ltar)                                              # Fix u,r
 end
-@inline function _biotBC!(r,u,U,uᵥ,Ii)
+@inline function _biotBC!(r,u,U,uᵥ,(k,Ii))
     I,i = front(Ii),last(Ii); lower = I.I[i]==1
-    uₙ = U[i]+uᵥ[Ii]
+    uₙ = U[i]+uᵥ[k]
     uI = lower ? Ii+δ(i,Ii) : Ii; uₙ⁰ = u[uI]; u[uI] = uₙ
     Atomix.@atomic r[I+(lower ? δ(i,I) : -δ(i,I))] += (uₙ-uₙ⁰)*(lower ? -1 : 1)
 end
 
 # Correct the global residual s.t. sum(r)=0
-fix_resid!(r,u,targets,fix=sum(r)/length(targets)) = @loop _fix_resid!(r,u,fix,Ii) over Ii ∈ targets
-@inline function _fix_resid!(r,u,fix,Ii)
+fix_resid!(r,u,ltar,fix=global_sum(r)/global_length(ltar)) = @loop _fix_resid!(r,u,fix,kI) over kI ∈ ltar
+@inline function _fix_resid!(r,u,fix,(_,Ii))
     I,i = front(Ii),last(Ii); lower = I.I[i]==1
     u[I+ (lower ? δ(i,I) : zero(I)),i] += fix*(lower ? 1 : -1)
     Atomix.@atomic r[I+ (lower ? δ(i,I) : -δ(i,I))] -= fix
