@@ -56,13 +56,17 @@ using BiotSavartBCs: MLArray,collect_targets,flatten_targets,fill_ω!,biotBC!,pf
     @test ml[2][Ti] == 2
 end
 
-using SpecialFunctions,ForwardDiff
+using ForwardDiff
+using ForwardDiff: Dual,value,partials
+using Bessels: besselj0,besselj1 # pure Julia, so they compile in a kernel; J₀, J₁ add their derivatives
+J₀(x) = besselj0(x); J₀(x::Dual{T}) where T = Dual{T}(J₀(value(x)),-J₁(value(x))*partials(x))
+J₁(x) = besselj1(x); J₁(x::Dual{T}) where T = (v = value(x); Dual{T}(J₁(v),(J₀(v)-J₁(v)/v)*partials(x)))
 function lamb_dipole(N;D=3N/4,U=1)
     β = 2.4394π/D
-    C = -2U/(β*besselj0(β*D/2))
+    C = -2U/(β*J₀(β*D/2))
     function ψ(x,y)
         r = √(x^2+y^2)
-        ifelse(r ≥ D/2, U*((D/2r)^2-1)*y, C*besselj1(β*r)*y/r)
+        ifelse(r ≥ D/2, U*((D/2r)^2-1)*y, C*J₁(β*r)*y/r)
     end
     return function uλ(i,xy)
         x,y = xy .- (N-2)/2
@@ -226,7 +230,7 @@ end
     @test maximum(abs,Δu[2:end,2:end-1,:,1])<0.04 && maximum(abs,Δu[2:end-1,2:end,:,2])<0.02 # as good as 2D
 
     # Spanwise-periodic cylinder: no spurious spanwise velocity
-    sim = BiotSimulation((48,48,8),(1,0,0),24; body=AutoBody((x,t)->√sum(abs2,(x.-24)[1:2])-12),ν=24/1e3,perdir=(3,))
+    sim = BiotSimulation((48,48,8),(1,0,0),24; body=AutoBody((x,t)->√((x[1]-24)^2+(x[2]-24)^2)-12),ν=24/1e3,perdir=(3,))
     for _ in 1:6; sim_step!(sim;remeasure=false); end
     @test maximum(abs,sim.flow.u[:,:,:,3]) < 1e-3
 end
