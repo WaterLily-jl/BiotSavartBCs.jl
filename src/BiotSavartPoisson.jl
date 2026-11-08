@@ -5,8 +5,8 @@ Pressure solver for `flow` with Biot-Savart boundary conditions, for use in the 
 of a `WaterLily.Simulation`. `BiotSimulation` sets this up for you and describes the keyword
 arguments. The fields are internal.
 """
-struct BiotSavartPoisson{T,S,V} <: AbstractPoisson{T,S,V}
-    ml   :: MultiLevelPoisson{T,S,V} # wrapped standard pressure solver
+struct BiotSavartPoisson{T,S,V,M<:MultiLevelPoisson{T,S,V}} <: AbstractPoisson{T,S,V}
+    ml   :: M                # wrapped standard pressure solver
     ω    :: NTuple         # multi-level vorticity (top level aliases `flow.f`)
     tg   :: NamedTuple     # domain boundary targets and their data, see `target_data`
     fmm  :: Bool           # use Fast Multi-level Method (`true`) or tree-sum (`false`)
@@ -21,7 +21,7 @@ struct BiotSavartPoisson{T,S,V} <: AbstractPoisson{T,S,V}
         ml = MultiLevelPoisson(flow.p, flow.μ₀, flow.σ; perdir)
         ω  = MLArray(flow.f,perdir)   # top level aliases flow.f — no copy
         tg = target_data(ω, (nonbiotfaces...,symmetry...), perdir; mem) # no targets on these faces
-        set_idx!(new{eltype(flow.p),typeof(flow.p),typeof(flow.μ₀)}(ml,ω,tg,fmm,symmetry,Ref{CartesianIndices}(),Ref{AbstractVector}()))
+        set_idx!(new{eltype(flow.p),typeof(flow.p),typeof(flow.μ₀),typeof(ml)}(ml,ω,tg,fmm,symmetry,Ref{CartesianIndices}(),Ref{AbstractVector}()))
     end
 end
 WaterLily.update!(b::BiotSavartPoisson) = (WaterLily.update!(b.ml); set_idx!(b))
