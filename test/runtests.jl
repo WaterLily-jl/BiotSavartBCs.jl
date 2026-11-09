@@ -29,7 +29,7 @@ using BiotSavartBCs: MLArray,collect_targets,flatten_targets,fill_ω!,biotBC!,pf
     Ti = last(tar[2])
     T,i = front(Ti),last(Ti)
     @test CartesianIndex(down(T),i)==last(tar[3])
-    
+
     @loop ml[3][I] += 16 over I in tar[3]
     project!(ml,tar)
     @test ml[2][Ti] == 4
@@ -50,7 +50,7 @@ using BiotSavartBCs: MLArray,collect_targets,flatten_targets,fill_ω!,biotBC!,pf
     Ti = last(tar[2])
     T,i = front(Ti),last(Ti)
     @test CartesianIndex(down(T),i)==last(tar[3])
-    
+
     @loop ml[3][I] += 4 over I in tar[3]
     project!(ml,tar)
     @test ml[2][Ti] == 2
@@ -95,7 +95,7 @@ using BiotSavartBCs: slice
     fill_ω!(ω,u) # Ideally, ω₃=0 & |ωᵩ|N/U≤20, but ω is discontinuous...
     @test all(-0.25 .< extrema(ω[:,:,:,3]) .*N .< 0.25) # roughly 0
     @test 18 < maximum(ω)*N < 20 # roughly |20|
-    @test abs(sum(ω)) < 1e-4 # zero total circulation
+    @test abs(sum(Float64,ω)) < 1e-4 # zero total circulation
 
     N = 2+3*2^3; U=(0,0,1)
     u = Array{Float32}(undef,(N,N,N,3)); apply!(hill_vortex(N),u); u₀ = copy(u)
@@ -158,7 +158,7 @@ using BiotSavartBCs: slice
     @test maximum(abs,r.-divergence(u)) < 1e-5 # r tracks the flux change
     @test maximum(abs,(u.-u₀)[2:end,2:end-1,1])<0.028
     @test maximum(abs,(u.-u₀)[2:end-1,2:end,2])<0.025
-    
+
     BC!(u,U) # mess up boundaries
     r = divergence(u); biotBC!(r,u,U,ω,tar,ftar;fmm=false) # fix domain velocities
     @test maximum(abs,r.-divergence(u)) < 1e-5
