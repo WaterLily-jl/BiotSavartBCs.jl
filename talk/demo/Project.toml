@@ -1,0 +1,7 @@
+[deps]
+CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
+GLMakie = "e9467ef8-e4e7-5192-8a1a-b1aee30e663a"
+Meshing = "e6723b4c-ebff-59f1-b4b7-d97aa5274f73"
+ParametricBodies = "06905c2e-4b4a-4765-8bb9-c6b6b2b99b1d"
+StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
+WaterLily = "ed894a53-35f9-47f1-b17f-85db9237eebd"
