@@ -41,12 +41,11 @@ function near_targets(B,ω,ftar,perdir)
 end
 function transition_box(μ₀,perdir)
     R = CartesianIndices(μ₀); none = (front(last(R)),front(first(R)))
-    bc = Broadcast.instantiate(Broadcast.broadcasted((x,I)->0<x<1 ? (front(I),front(I)) : none,μ₀,R))
-    lo,hi = mapreduce(identity,((a,b),(c,d))->(min(a,c),max(b,d)),bc;init=none)
+    lo,hi = AK.mapreduce(I->0<@inbounds(μ₀[I])<1 ? (front(I),front(I)) : none,((a,b),(c,d))->(min(a,c),max(b,d)),R;init=none,backend=get_backend(μ₀))
     CartesianIndices(ntuple(d->d∈perdir ? (1:size(μ₀,d)) : lo[d]-1:hi[d]+1,ndims(μ₀)-1))
 end
 coarsen(B,l) = l==1 ? B : coarsen(down(B),l-1)
-import WaterLily: div,δv,perBC!,mult,L₁,L∞,Vcycle!,smooth!
+import WaterLily: div,δv,perBC!,mult,L₁,L∞,L₁L∞,Vcycle!,smooth!
 
 """
     mom_project!(a::AbstractFlow, b::BiotSavartPoisson, w::Int, t; tol=2e-3, itmx=32)
@@ -69,7 +68,7 @@ function WaterLily.mom_project!(a::AbstractFlow{N}, b::BiotSavartPoisson, w::Int
             L₁(top)<rtol && break
         end
         body_ω!(b,a); biotBC!(b,a,U;idx=b.idx[])
-        r₁,r∞ = L₁(top),L∞(top); nᵇ+=1
+        r₁,r∞ = L₁L∞(top); nᵇ+=1
         @log ", $nᵖ, $r∞, $r₁, $nᵇ\n"
         r₁<r₁tol && r∞<tol && break
     end

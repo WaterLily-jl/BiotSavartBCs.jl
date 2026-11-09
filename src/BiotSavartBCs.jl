@@ -1,6 +1,7 @@
 module BiotSavartBCs
 
 using WaterLily
+import AcceleratedKernels as AK
 
 include("geom.jl")
 include("multilevel.jl")

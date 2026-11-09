@@ -220,6 +220,14 @@ end
         @show sim.pois.ml.n
     end
 end
+using BiotSavartBCs: transition_box
+@testset "transition_box" begin
+    μ₀ = ones(Float32,18,18,34,3); μ₀[6:9,7:8,10:20,2] .= 0.5f0; μ₀[12,5,15,1] = 0.2f0; μ₀[3:4,3:4,3:4,:] .= 0
+    J = front.(findall(x->0<x<1,μ₀)); lo,hi = reduce(min,J),reduce(max,J)
+    @test transition_box(μ₀,()) == CartesianIndices(ntuple(d->lo[d]-1:hi[d]+1,3))
+    @test transition_box(μ₀,(3,)) == CartesianIndices((lo[1]-1:hi[1]+1,lo[2]-1:hi[2]+1,1:34))
+    @test isempty(transition_box(ones(Float32,18,18,34,3),()))
+end
 @testset "periodic BCs" begin
     # Slab test: a z-uniform Lamb dipole in a z-periodic domain must induce the 2D velocity
     N = 2+2^5; u₀ = Array{Float32}(undef,(N,N,2)); apply!(lamb_dipole(N),u₀)
