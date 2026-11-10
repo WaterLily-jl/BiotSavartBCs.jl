@@ -17,7 +17,7 @@ Keys: Esc overview · S speaker notes · L light/dark · H hide placeholders · 
 julia --project=talk/demo -e "using Pkg; Pkg.instantiate()"   # first time only
 julia --project=talk/demo -i talk/demo/whale.jl
 ```
-Call `show_whale()` once before the talk to compile, then `show_whale(Λ)` with a sweep angle from the room: about 17 s per stroke on a GPU.
+Call `show_whale()` once before the talk to compile, then `show_whale(Λ)` with a sweep angle from the room (0–35°): about 11–13 s per stroke at 25° and 13–15 s at 35° on the A2000 (LilyPad semi-Lagrangian step, NarrowBand, Biot–Savart box).
 
 ## Editing
 - `index.html` holds every slide in order, numbered from 0 as presented: headline, media, and speaker notes in `<aside class="notes">`. Elements with `class="fragment"` step in on a click; a shared `data-fragment-index` brings them in together.

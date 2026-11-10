@@ -7,7 +7,7 @@
   <meta name="description" content="Gabriel Weymouth, TU Delft — WaterLily handles the solver, so you can spend your time studying the animal.">
   <link rel="stylesheet" href="vendor/reveal/reset.css">
   <link rel="stylesheet" href="vendor/reveal/reveal.css">
-  <link rel="stylesheet" href="css/theme.css?v=9">
+  <link rel="stylesheet" href="css/theme.css?v=10">
 </head>
 <body>
 <div class="reveal"><div class="slides">
@@ -29,6 +29,18 @@
 
 <!-- 1 -->
 <section>
+  <h2 class="headline top" data-story>Unsteady hydrodynamic flow and forcing is fascinating</h2>
+  <div class="grid4">
+    <div class="media contain" data-file="assets/img/atlantis.mp4" data-alt="Atlantis robotic swimmer, straight swim"></div>
+    <div class="media contain" data-file="assets/img/pulse8.mp4" data-alt="Pulse-8 pulsed-jet vehicle"></div>
+    <div class="media contain" data-file="assets/img/balloon_rocket.mp4" data-alt="Balloon rocket swimming"></div>
+    <div class="media contain" data-file="assets/img/robotic_fish.mp4" data-alt="Robotic fish, dual view"></div>
+  </div>
+  <aside class="notes">Who I am: unsteady flows and the forces they make. Atlantis, the Pulse-8 jet, the balloon rocket, and Leo Micklem's robotic fish.</aside>
+</section>
+
+<!-- 2 -->
+<section>
   <h2 class="headline top" data-story>WaterLily.jl: computational fluid dynamics without the headaches</h2>
   <div class="cards pains-big">
     <div><div class="icon"><div class="figure" data-figure="pain-mesh" data-w="360" data-h="190"></div></div><b>Mesh</b><span class="fragment strike" data-fragment-index="1">A new body-fitted grid for every time step</span><span class="fix fragment" data-fragment-index="1"><i>Immersed boundaries</i>One grid. Any shape, any motion.</span></div>
@@ -41,7 +53,7 @@
   <aside class="notes">CFD is usually a fight with the solver, none of it biology. [click ×4] Each headache, and WaterLily's fix. A resolution study is all that's left. [click] So: the animal.</aside>
 </section>
 
-<!-- 2 -->
+<!-- 3 -->
 <section>
   <h2 class="headline top" data-story>The code gets out of the way, you focus on the study</h2>
 <pre class="code" style="left:110px;top:250px;width:860px;font-size:22px"><code><span class="k">using</span> <span class="t">WaterLily</span>, <span class="t">WaterLilyMeshBodies</span>, <span class="t">BiotSavartBCs</span>
@@ -64,7 +76,7 @@ sim = <span class="f">BiotSimulation</span>(dims, (<span class="n">0</span>,U,<s
 
 <!-- ============================ CASE 1: THE TAIL ============================ -->
 
-<!-- 3 -->
+<!-- 4 -->
 <section>
   <h2 class="headline top" data-story>We can simulate the whole dolphin. <em class="fragment" data-fragment-index="1">But the action is in the tail!</em></h2>
   <div class="media contain box-left" data-file="assets/img/dolphin.gif" data-alt="Mesh-body dolphin from an STL file"></div>
@@ -75,7 +87,7 @@ sim = <span class="f">BiotSimulation</span>(dims, (<span class="n">0</span>,U,<s
   <aside class="notes">Any STL goes straight in, but propulsion is about the tail. [click] And biologists have argued about fluke sweep for decades.</aside>
 </section>
 
-<!-- 4 -->
+<!-- 5 -->
 <section>
   <h2 class="headline top" data-story>Fluke sweep is 10x less important than kinematics</h2>
   <div class="media contain box-left" data-file="assets/img/whale_tail_crop.mp4" data-alt="Flapping whale-fluke planform (ParametricBodies), vorticity"><div class="tag">Live demo</div></div>
@@ -84,10 +96,10 @@ sim = <span class="f">BiotSimulation</span>(dims, (<span class="n">0</span>,U,<s
   <p class="ask-line fragment">Sweep Λ barely correlates with thrust or power (|r| &lt; 0.05). <em>The motion does</em> (0.6–0.7).</p>
   <div class="cite">Zurman-Nasution, Ganapathisubramani &amp; Weymouth, <i>J. R. Soc. Interface</i>, 2021</div>
   <div class="needs"><b>Study the animal, not the solver</b><em>the tail's motion, not its outline</em></div>
-  <aside class="notes">DEMO: show_whale(Λ) with an angle from the room, ~17 s per stroke; fallback is the video. [click] Sweep correlates with nothing; the motion does.</aside>
+  <aside class="notes">DEMO: show_whale(Λ) with an angle from the room, ~11–15 s per stroke, 0–35° only; fallback is the video. [click] Sweep correlates with nothing; the motion does.</aside>
 </section>
 
-<!-- 5 -->
+<!-- 6 -->
 <section>
   <h2 class="headline top" data-story>Kinematics dominate even at turbulent Reynolds numbers</h2>
   <div class="media contain" data-file="assets/img/andhini_high_re.gif" data-alt="Pitching–heaving foil at Re = 10^6, 3D vorticity" data-view="inset(35% 0 5% 0)" style="left:60px;right:1000px;top:250px;bottom:415px;background:transparent"></div>
@@ -107,7 +119,7 @@ sim = <span class="f">BiotSimulation</span>(dims, (<span class="n">0</span>,U,<s
 
 <!-- ============================ CASE 2: THE JELLY ============================ -->
 
-<!-- 6 -->
+<!-- 7 -->
 <section>
   <h2 class="headline top" data-story>Trace the real animal's stroke, and it swims</h2>
   <div class="media contain" data-file="assets/img/sarsia_spline_fit.png" data-alt="Bell outline digitised from Sahin et al. 2009, with the spline fit, through the contraction" style="left:60px;right:60px;top:200px;bottom:190px;background:transparent"></div>
@@ -117,7 +129,7 @@ sim = <span class="f">BiotSimulation</span>(dims, (<span class="n">0</span>,U,<s
   <aside class="notes">Evan van der Weide's MSc: Sarsia tubulosa, about 1 cm. Sahin's traced outlines (red) fitted by one moving spline (black), volume conserved. Now we can vary the stroke.</aside>
 </section>
 
-<!-- 7 -->
+<!-- 8 -->
 <section>
   <h2 class="headline top" data-story>Free swimming in a tank barely bigger than the jellyfish</h2>
   <div class="media contain" data-file="assets/img/jelly_walls.mp4" data-alt="Toy jelly, ordinary walls" style="left:110px;right:1370px;top:250px;bottom:70px;background:transparent"></div>
@@ -133,7 +145,7 @@ sim = <span class="f">BiotSimulation</span>(dims, (<span class="n">0</span>,U,<s
   <aside class="notes">A free swimmer's speed depends on the flow, so walls matter. Ordinary walls reflect the wake: the ring breaks up. [click] Biot–Savart walls act like open water. Evan's box: 3 × 2 × 2 diameters; doubling it changes the force 4%.</aside>
 </section>
 
-<!-- 8 -->
+<!-- 9 -->
 <section>
   <h2 class="headline top" data-story>Virtual jellyfish keeps pace with the real thing</h2>
   <div class="media contain" data-file="assets/img/sarsia_lab.mp4" data-alt="Sarsia tubulosa free-swimming from rest, lab frame" data-pos="0% 50%" style="left:110px;right:810px;top:200px;bottom:550px;background:transparent"></div>
@@ -148,7 +160,7 @@ sim = <span class="f">BiotSimulation</span>(dims, (<span class="n">0</span>,U,<s
   <aside class="notes">Swimming from rest. [click] Matches Sahin's CFD at 1.25 cm and Colin &amp; Costello's animal at 0.85 cm. [click] Minutes per stroke on one GPU.</aside>
 </section>
 
-<!-- 9 -->
+<!-- 10 -->
 <section>
   <h2 class="headline top" data-story>Kinematics sets the jellyfish's cost of swimming</h2>
   <div class="media contain" data-file="assets/img/sarsia_strouhal.png" data-alt="Strouhal number against duty cycle, and cost of transport against Strouhal number" style="left:40px;right:700px;top:230px;bottom:150px;background:transparent"></div>
@@ -165,7 +177,7 @@ sim = <span class="f">BiotSimulation</span>(dims, (<span class="n">0</span>,U,<s
 
 <!-- ============================ CASE 3: THE GEOMETRY ============================ -->
 
-<!-- 10 -->
+<!-- 11 -->
 <section>
   <h2 class="headline top" data-story>When the shape <em>is</em> the science: hearts and turbines</h2>
   <div class="media contain" data-file="assets/img/heartvalve.mp4" data-alt="Heart valve, mesh body coupled to FEA" style="left:60px;right:980px;top:250px;bottom:300px;background:transparent"></div>
@@ -178,7 +190,7 @@ sim = <span class="f">BiotSimulation</span>(dims, (<span class="n">0</span>,U,<s
 
 <!-- ============================ CLOSE ============================ -->
 
-<!-- 11 -->
+<!-- 12 -->
 <section>
   <h2 class="headline top">Study the animal, not the solver</h2>
   <p class="ask-line" style="top:165px;bottom:auto">Bring kinematics geometry and <em>questions</em>!</p>
@@ -204,7 +216,7 @@ sim = <span class="f">BiotSimulation</span>(dims, (<span class="n">0</span>,U,<s
   <aside class="notes">Every case was a choice about the animal, not the flow. Install, start from the examples. Bring us your animal. Questions?</aside>
 </section>
 
-<!-- 12 -->
+<!-- 13 -->
 <section>
   <h2 class="headline top">References and code</h2>
   <ol class="refs">
