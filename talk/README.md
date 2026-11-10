@@ -12,7 +12,7 @@ Without Julia, `python talk/scripts/serve.py` serves the deck on localhost:8000.
 
 Keys: Esc overview · S speaker notes · L light/dark · H hide placeholders · F fullscreen.
 
-## Whale demo (slide 4)
+## Whale demo (after slide 3)
 ```
 julia --project=talk/demo -e "using Pkg; Pkg.instantiate()"   # first time only
 julia --project=talk/demo -i talk/demo/whale.jl

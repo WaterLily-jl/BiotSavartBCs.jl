@@ -5,7 +5,7 @@ CUDA.allowscalar(false)
 function whale(Λ=25; L=32, U=1, Re=1e4, T=Float32, mem=CUDA.functional() ? CuArray : Array, Δt=1.5)
     0 ≤ Λ ≤ 35 || throw(ArgumentError("this planform is only valid for sweep angles of 0–35°, got Λ=$Λ"))
     s = 190tand(Λ)/8
-    pnts = SA{T}[0 40 190   200   190   170   100   0 -10 0
+    pnts = SA{T}[-20 40 190   200   190   170   100 -20 -30 -20
                  0  0  8s 8s+40 5s+70 5s+50 5s+70 100  80 0]
     function map(x, t)
         θ, h = π/6*sin(U*t/L), 1.25+0.5cos(U*t/L)
