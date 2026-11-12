@@ -95,7 +95,11 @@ using BiotSavartBCs: slice
     fill_ω!(ω,u) # Ideally, ω₃=0 & |ωᵩ|N/U≤20, but ω is discontinuous...
     @test all(-0.25 .< extrema(ω[:,:,:,3]) .*N .< 0.25) # roughly 0
     @test 18 < maximum(ω)*N < 20 # roughly |20|
-    @test abs(sum(Float64,ω)) < 1e-4 # zero total circulation
+
+    # Zero total circulation: Σω telescopes, so integer u vanishing near the edges gives Σωᵢ == 0 exactly
+    u .= 0; u[5:N-4,5:N-4,5:N-4,:] .= rand(-3:3,N-8,N-8,N-8,3)
+    fill!(ω,0); fill_ω!(ω,u)
+    @test all(i->sum(@view ω[:,:,:,i])==0, 1:3) && sum(abs,ω) > 0
 
     N = 2+3*2^3; U=(0,0,1)
     u = Array{Float32}(undef,(N,N,N,3)); apply!(hill_vortex(N),u); u₀ = copy(u)
