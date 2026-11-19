@@ -208,6 +208,14 @@ end
     end
     sim = circ(64;fmm=true); WaterLily.mom_project!(sim.flow,sim.pois,1,0;itmx=0)
     @test sim.pois.ml.n == [0] # keyword reaches the V-cycle loop
+    # concretely typed fields and Ref contents, so mom_step! and measure! dispatch statically
+    @test all(isconcretetype,fieldtypes(typeof(sim.pois)))
+    @test isconcretetype(eltype(sim.pois.box)) && isconcretetype(eltype(sim.pois.idx))
+    # a moving body changes the transition box: update! refreshes it and its near targets in place
+    sim = BiotSimulation((64,64),(1,0),16; body=AutoBody((x,t)->√((x[1]-24-4t)^2+(x[2]-32)^2)-8),ν=16/1e4)
+    box = sim.pois.box[]; measure!(sim,4)
+    @test sim.pois.box[] == box .+ CartesianIndex(16,0)
+    @test sim.pois.idx[] == BiotSavartBCs.near_targets(sim.pois.box[],sim.pois.ω,sim.pois.ftar,())
 
     sphere(D;fmm,m=3D÷2) = BiotSimulation((m,m,m), (1,0,0), D; body=AutoBody((x,t)->√sum(abs2,x .- m/2)-D/2),ν=D/1e4,fmm)
     for fmm in (true,false)
