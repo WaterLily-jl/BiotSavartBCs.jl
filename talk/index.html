@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Study the animal, not the solver</title>
+  <meta name="description" content="Gabriel Weymouth, TU Delft — WaterLily handles the solver, so you can spend your time studying the animal.">
+  <link rel="stylesheet" href="vendor/reveal/reset.css">
+  <link rel="stylesheet" href="vendor/reveal/reveal.css">
+  <link rel="stylesheet" href="css/theme.css?v=13">
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+<!-- Theme: WaterLily handles the flow, so the science is in how you model the animal.
+     The corner card (.needs) repeats the title on every slide, with what that case models. -->
+
+<!-- ============================ OPENING ============================ -->
+
+<!-- 0 -->
+<section>
+  <div class="media contain" data-file="assets/img/dolphin.gif" data-alt="WaterLily simulation of a swimming dolphin" style="left:960px;right:60px;top:200px;bottom:200px;background:transparent"></div>
+  <div class="headline" style="top:330px;bottom:auto;max-width:800px">
+    <h1 style="font-size:92px;line-height:1.05;font-weight:400">Study the animal,<br> not the solver</h1>
+    <div class="byline" style="margin-top:40px;font-size:32px;color:var(--ink-dim)"><b style="font-weight:400;color:var(--ink)">Gabriel Weymouth</b> · TU Delft</div>
+  </div>
+  <aside class="notes">A good solver gets out of your way, so the science is in how you model the animal.</aside>
+</section>
+
+<!-- 1 -->
+<section>
+  <h2 class="headline top" data-story>Unsteady hydrodynamic flow and forcing is fascinating</h2>
+  <div class="grid4">
+    <div class="media contain" data-file="assets/img/atlantis.mp4" data-alt="Atlantis four-flipper robot swimming underwater"><div class="animal fragment" data-fragment-index="1">Plesiosaur</div><div class="vref">Muscutt et al., <i>Proc. R. Soc. B</i>, 2017</div></div>
+    <div class="media contain" data-file="assets/img/pulse8.mp4" data-alt="Pulse-8 resonant squid-inspired robot"><div class="animal fragment" data-fragment-index="1">Squid</div><div class="vref">Bujard, Giorgio-Serchi &amp; Weymouth, <i>Sci. Robot.</i>, 2021</div></div>
+    <div class="media contain" data-file="assets/img/balloon_rocket.mp4" data-alt="Octopus-inspired shrinking-balloon rocket"><div class="animal fragment" data-fragment-index="1">Octopus</div><div class="vref">Weymouth, Subramaniam &amp; Triantafyllou, <i>Bioinspir. Biomim.</i>, 2015</div></div>
+    <div class="media contain" data-file="assets/img/robotic_fish.mp4" data-alt="Soft proprioceptive wing, dual view"><div class="animal fragment" data-fragment-index="1">Fish</div><div class="vref">Micklem et al., <i>npj Robotics</i>, 2026</div></div>
+  </div>
+  <aside class="notes">Who I am: unsteady flows and the forces they make. Plesiosaur four-flipper robot, the resonant squid robot, the octopus-inspired escape, and Leo Micklem's soft proprioceptive wing.</aside>
+</section>
+
+<!-- 2 -->
+<section>
+  <h2 class="headline top" data-story>WaterLily.jl: computational fluid dynamics without the headaches</h2>
+  <div class="cards pains-big">
+    <div><div class="icon"><div class="figure" data-figure="pain-mesh" data-w="360" data-h="190"></div></div><b>Mesh</b><span class="fragment strike" data-fragment-index="1">A new body-fitted grid for every time step</span><span class="fix fragment" data-fragment-index="1"><i>Immersed boundaries</i>One grid. Any shape, any motion.</span></div>
+    <div><div class="icon"><div class="figure" data-figure="pain-model" data-w="360" data-h="190"></div></div><b>Turbulence model</b><span class="fragment strike" data-fragment-index="1">Pick a model, tune it, defend it</span><br><span class="fix fragment" data-fragment-index="1"><i>Implicit LES</i>Nothing to tune. Just refine.</span></div>
+    <div><div class="icon"><div class="figure" data-figure="pain-domain" data-w="360" data-h="190"></div></div><b>Domain size</b><span class="fragment strike" data-fragment-index="1">Giant simulation to keep the walls away</span><span class="fix fragment" data-fragment-index="1"><i>Biot–Savart boundaries</i>A domain that hugs the body.</span></div>
+    <div><div class="icon"><div class="figure" data-figure="pain-time" data-w="360" data-h="190"></div></div><b>Run time</b><span class="fragment strike" data-fragment-index="1">Days per run on a cluster</span><br><span class="fix fragment" data-fragment-index="1"><i>GPUs</i>Minutes per run.</span></div>
+  </div>
+  <p class="ask-line fragment" data-fragment-index="2">All that's left is the animal.</p>
+  <div class="needs fragment" data-fragment-index="2"><b>Study the animal, not the solver</b></div>
+  <aside class="notes">CFD is usually a fight with the solver, none of it biology. [click] Each headache, and WaterLily's fix. A resolution study is all that's left. [click] So: the animal.</aside>
+</section>
+
+<!-- 3 -->
+<section>
+  <h2 class="headline top" data-story>The code gets out of the way, you focus on the study</h2>
+<pre class="code" style="left:110px;top:250px;width:860px;font-size:22px"><code><span class="k">using</span> <span class="t">WaterLily</span>, <span class="t">WaterLilyMeshBodies</span>, <span class="t">BiotSavartBCs</span>
+
+<span class="c"># Import the animal: any STL, from a scan or CAD</span>
+body = <span class="f">MeshBody</span>(<span class="s">"dolphin.stl"</span>; map=swim)
+
+<span class="c"># Add the motion: a wave running down the body</span>
+<span class="f">swim</span>(x,t) = x - x₀ - [<span class="n">0</span>, <span class="n">0</span>, <span class="f">a</span>(x[<span class="n">2</span>])*<span class="f">sin</span>(k*x[<span class="n">2</span>] - ω*t)]
+
+<span class="c"># Swim it in a box that hugs the body</span>
+sim = <span class="f">BiotSimulation</span>(dims, (<span class="n">0</span>,U,<span class="n">0</span>), L; body, ν=U*L/Re)
+<span class="f">sim_step!</span>(sim, <span class="n">10</span>)</code></pre>
+  <div class="media contain" data-file="assets/img/dolphin.gif" data-alt="Mesh-body dolphin swimming" style="left:1000px;right:110px;top:250px;bottom:384px;background:transparent"></div>
+  <p class="ask-line" style="top:770px;bottom:auto">Simulation is easy → what does your study really need?</p>
+  <p class="ask-line fragment" style="top:840px;bottom:auto"><em>The action is in the tail!</em></p>
+  <div class="needs"><b>Study the animal, not the solver</b><em>Simulation is easy</em></div>
+  <aside class="notes">Pseudo-code; point at the three comments, don't read it. There it swims: import, move, run. So what does your study need? [click] For propulsion, it's the tail. DEMO: switch to the REPL, show_whale(Λ) with an angle from the room (0–35°), ~11–15 s per stroke; fallback is the fluke video on the next slide.</aside>
+</section>
+
+<!-- ============================ CASE 1: THE TAIL ============================ -->
+
+<!-- 4 -->
+<section>
+  <h2 class="headline top" data-story>Fluke sweep is 10x less important than kinematics</h2>
+  <div class="media contain box-left" data-file="assets/img/whale_tail_crop.mp4" data-alt="Flapping whale-fluke planform (ParametricBodies), vorticity"></div>
+  <div class="media contain box-right fragment fade-out" data-fragment-index="1" data-file="assets/img/rsif_sweep_data.png" data-alt="Sweep angle against aspect ratio for flukes, fins, flippers and wings"></div>
+  <p class="ask-line fragment fade-out" data-fragment-index="1">Biologists have argued about the fluke sweep for decades.</p>
+  <p class="vcap fragment" data-fragment-index="1" style="left:1030px;width:820px;top:225px">Correlation of tail-like and flipper-like <em>motion</em> and geometry <br> with propulsive performance</p>
+  <div class="media contain fragment" data-fragment-index="1" data-file="assets/img/rsif_pearson.png" data-alt="Correlations of sweep, aspect ratio, amplitude and motion with thrust, lift and power" style="left:1060px;right:90px;top:345px;bottom:180px;background:transparent"></div>
+  <p class="ask-line fragment" data-fragment-index="1">Sweep Λ barely correlates with thrust or power (|r| &lt; 0.05). <em>The motion does</em> (0.6–0.7).</p>
+  <div class="cite">Zurman-Nasution, Ganapathisubramani &amp; Weymouth, <i>J. R. Soc. Interface</i>, 2021</div>
+  <div class="needs"><b>Study the animal, not the solver</b><em>the tail's motion, not its outline</em></div>
+  <aside class="notes">Biologists have argued about fluke sweep for decades: huge spread across mammals, fish, flippers and wings. [click] Sweep correlates with nothing; the motion does.</aside>
+</section>
+
+<!-- 5 -->
+<section>
+  <h2 class="headline top" data-story>Kinematics dominate even at turbulent Reynolds numbers</h2>
+  <div class="media contain" data-file="assets/img/andhini_high_re.gif" data-alt="Pitching–heaving foil at Re = 10^6, 3D vorticity" data-view="inset(35% 0 5% 0)" style="left:60px;right:1000px;top:250px;bottom:415px;background:transparent"></div>
+  <ul class="points" style="left:960px;max-width:880px;top:280px">
+    <li>The same flapping foil at Re = 10⁴, 10⁵ and 10⁶</li>
+    <li>At 10⁶ the boundary layer <em>relaminarises</em>: smaller, more numerous leading-edge vortices and calmer wall friction</li>
+  </ul>
+  <div class="split3" style="left:60px;right:60px;top:680px;bottom:110px;padding:0;gap:16px;background:var(--bg)">
+    <div class="media contain" style="padding-bottom:36px;box-sizing:border-box" data-file="assets/img/jfm_re1e4.png" data-alt="Flapping foil vorticity, Re = 10^4"><div class="tag" style="bottom:0">Re = 10⁴</div></div>
+    <div class="media contain" style="padding-bottom:36px;box-sizing:border-box" data-file="assets/img/jfm_re1e5.png" data-alt="Flapping foil vorticity, Re = 10^5"><div class="tag" style="bottom:0">Re = 10⁵</div></div>
+    <div class="media contain framed" style="padding-bottom:46px;box-sizing:border-box" data-file="assets/img/jfm_re1e6.png" data-view="inset(12% 0 17% 0)" data-alt="Flapping foil vorticity, Re = 10^6"><div class="tag" style="bottom:0">Re = 10⁶</div></div>
+  </div>
+  <div class="cite">Zurman-Nasution, Weymouth &amp; Ganapathisubramani, <i>J. Fluid Mech.</i> 1041, A32, 2026 · computed with WaterLily's Fortran predecessor</div>
+  <div class="needs"><b>Study the animal, not the solver</b><em>the kinematics, at any Reynolds number</em></div>
+  <aside class="notes">Same foil, St 0.3, Re 10⁴ to 10⁶. Smaller, more numerous LEVs; the boundary layer relaminarises. Fortran WaterLily on CPUs, same method.</aside>
+</section>
+
+<!-- ============================ CASE 2: THE JELLY ============================ -->
+
+<!-- 6 -->
+<section>
+  <h2 class="headline top" data-story>Trace the real animal's stroke, and it swims</h2>
+  <div class="media contain" data-file="assets/img/sarsia_spline_fit.png" data-alt="Bell outline digitised from Sahin et al. 2009, with the spline fit, through the contraction" style="left:60px;right:60px;top:200px;bottom:190px;background:transparent"></div>
+  <p class="vcap" style="left:110px;width:1300px;top:900px">Bell and velum digitised at ten points in the stroke (red), fitted with a spline that moves through it (black)</p>
+  <div class="cite">van der Weide, MSc thesis, TU Delft, 2026 · Sahin, Mohseni &amp; Colin, <i>J. Exp. Biol.</i>, 2009</div>
+  <div class="needs"><b>Study the animal, not the solver</b><em>the measured stroke</em></div>
+  <aside class="notes">Evan van der Weide's MSc: Sarsia tubulosa, about 1 cm. Sahin's traced outlines (red) fitted by one moving spline (black), volume conserved. Now we can vary the stroke.</aside>
+</section>
+
+<!-- 7 -->
+<section>
+  <h2 class="headline top" data-story>Free swimming in a tank barely bigger than the jellyfish</h2>
+  <div class="media contain" data-file="assets/img/jelly_walls.mp4" data-alt="Toy jelly, ordinary walls" style="left:110px;right:1370px;top:250px;bottom:70px;background:transparent"></div>
+  <p class="vcap" style="left:110px;width:440px;top:200px;text-align:center"><b>Ordinary walls</b></p>
+  <div class="media contain fragment" data-fragment-index="1" data-file="assets/img/jelly_autobody.mp4" data-alt="Toy jelly, Biot–Savart walls, same box" style="left:620px;right:860px;top:250px;bottom:70px;background:transparent"></div>
+  <p class="vcap fragment" data-fragment-index="1" style="left:620px;width:440px;top:200px;text-align:center"><b>Biot–Savart walls, same box</b></p>
+  <ul class="points" style="left:1170px;max-width:680px;top:300px">
+    <li>Ordinary walls act like a cramped aquarium: the wake hits them and comes back</li>
+    <li class="fragment" data-fragment-index="1">Biot–Savart boundaries act like open water: the walls are invisible to the jellyfish</li>
+  </ul>
+  <div class="cite fragment" data-fragment-index="1" style="left:1170px;max-width:680px;bottom:130px">Weymouth &amp; Lauber, JFM, 2025 & arXiv:2404.09034, 2024</div>
+  <div class="needs"><b>Study the animal, not the solver</b><em>a giant tank with a tiny simulation</em></div>
+  <aside class="notes">A free swimmer's speed depends on the flow, so walls matter. Ordinary walls reflect the wake: the ring breaks up. [click] Biot–Savart walls act like open water. Evan's box: 3 × 2 × 2 diameters; doubling it changes the force 4%.</aside>
+</section>
+
+<!-- 8 -->
+<section>
+  <h2 class="headline top" data-story>Virtual jellyfish keeps pace with the real thing</h2>
+  <div class="media contain" data-file="assets/img/sarsia_lab.mp4" data-alt="Sarsia tubulosa free-swimming from rest, lab frame" data-pos="0% 50%" style="left:110px;right:810px;top:200px;bottom:550px;background:transparent"></div>
+  <div class="media contain fragment" data-fragment-index="1" data-file="assets/img/sarsia_validation.png" data-alt="Swimming speed against Sahin 2009 CFD and Colin &amp; Costello 2002 measurements" data-pos="0% 50%" style="left:110px;right:810px;top:550px;bottom:90px;background:transparent"></div>
+  <ul class="points" style="left:1170px;max-width:690px;top:280px">
+    <li>Swimming from rest at Re ≈ 760, on one GPU</li>
+    <li class="fragment" data-fragment-index="1">Its speed tracks body-fitted CFD at 1.25 cm and the live animal at 0.85 cm</li>
+    <li class="fragment" data-fragment-index="2">¾ million cells: 1.5–3 minutes per stroke on one GPU</li>
+  </ul>
+  <div class="cite">van der Weide, MSc thesis, TU Delft, 2026 · Sahin, Mohseni &amp; Colin, <i>J. Exp. Biol.</i>, 2009 · Colin &amp; Costello, <i>J. Exp. Biol.</i>, 2002</div>
+  <div class="needs"><b>Study the animal, not the solver</b><em>freely swimming in open water</em></div>
+  <aside class="notes">Swimming from rest. [click] Matches Sahin's CFD at 1.25 cm and Colin &amp; Costello's animal at 0.85 cm. [click] Minutes per stroke on one GPU.</aside>
+</section>
+
+<!-- 9 -->
+<section>
+  <h2 class="headline top" data-story>Kinematics sets the jellyfish's cost of swimming</h2>
+  <div class="media contain" data-file="assets/img/sarsia_strouhal.png" data-alt="Strouhal number against duty cycle, and cost of transport against Strouhal number" style="left:40px;right:700px;top:230px;bottom:150px;background:transparent"></div>
+  <ul class="points" style="left:1260px;max-width:600px;top:280px">
+    <li>Same bell, different strokes: cost of transport from <em>5 to 100</em></li>
+    <li>Cheapest near St ≈ 0.15–0.2, with a short stroke</li>
+    <li>Real <i>Sarsia</i> strokes at duty cycle ≈ 0.2: low St, high cost</li>
+    <li class="ask fragment">So what is it optimising?</li>
+  </ul>
+  <div class="cite">van der Weide, MSc thesis, TU Delft, 2026</div>
+  <div class="needs"><b>Study the animal, not the solver</b><em>answer one question to find another</em></div>
+  <aside class="notes">Same bell, twentyfold range in cost, cheapest near St 0.15–0.2. The real animal strokes fast. [click] Over to the biologists.</aside>
+</section>
+
+<!-- ============================ CASE 3: THE GEOMETRY ============================ -->
+
+<!-- 10 -->
+<section>
+  <h2 class="headline top" data-story>When the shape <em>is</em> the science: hearts and turbines</h2>
+  <div class="media contain" data-file="assets/img/heartvalve.mp4" data-alt="Heart valve, mesh body coupled to FEA" style="left:60px;right:980px;top:250px;bottom:300px;background:transparent"></div>
+  <div class="media contain" data-file="assets/img/turbine.mp4" data-alt="Wind turbine, mesh body, LES" style="left:980px;right:60px;top:210px;bottom:300px;background:transparent"></div>
+  <p class="vcap" style="left:110px;width:780px;top:810px"><b>Holland Hybrid Heart project:</b> Mathias Peirlinck and Marin Lauber. WaterLily + Ferrite for coupled simulations of an artificial heart valve</p>
+  <p class="vcap" style="left:1030px;width:780px;top:810px"><b>Industrial-scale LES project:</b> Bernat Font. WaterLily + MPI for 6 billion cells on 256 GPUs</p>
+  <div class="needs"><b>Study the animal, not the solver</b><em>the full shape, and how it flexes</em></div>
+  <aside class="notes">When shape is the question: Ferrite FSI for a heart valve; 6 billion cells on 256 GPUs for a turbine.</aside>
+</section>
+
+<!-- ============================ CLOSE ============================ -->
+
+<!-- 11 -->
+<section>
+  <h2 class="headline top">Study the animal, not the solver</h2>
+  <p class="ask-line" style="top:165px;bottom:auto">Bring kinematics geometry and <em>questions</em>!</p>
+  <div class="gallery" style="top:250px">
+    <div class="media contain" data-file="assets/img/dolphin.gif" data-alt="Dolphin"><div class="tag">What's the study?</div></div>
+    <div class="media contain" data-file="assets/img/whale_tail_crop.mp4" data-alt="Whale fluke"><div class="tag">Kinematic > geometry</div></div>
+    <div class="media contain" data-file="assets/img/andhini_high_re.gif" data-alt="High-Re flapping foil" data-view="inset(35% 0 13% 0)"><div class="tag">High Reynolds flapping</div></div>
+    <div class="media contain wide" data-view="inset(0 22% 0 13%)" data-file="assets/img/sarsia_lab.mp4" data-alt="Sarsia tubulosa"><div class="tag">Free swimming cost</div></div>
+    <div class="media contain wide" data-file="assets/img/heartvalve.mp4" data-alt="Heart valve"><div class="tag">Detailed shape and flexibility</div></div>
+  </div>
+  <div class="qr" data-qr="https://github.com/WaterLily-jl" style="top:240px;right:200px;width:320px;height:320px"></div>
+  <p class="qr-url" style="top:575px;right:200px;width:320px">github.com/WaterLily-jl</p>
+  <ul class="points" style="left:1330px;max-width:520px;top:640px;font-size:28px">
+    <li><span class="jl">] add WaterLily</span></li>
+    <li>Start from <em>WaterLily-Examples</em></li>
+    <li>Laptop CPU or GPU, same script</li>
+  </ul>
+  <div class="bignums" style="left:1330px;right:60px;bottom:70px;gap:36px">
+    <div><b>857</b>stars</div>
+    <div><b>23</b>contributors</div>
+    <div><b>116</b>forks</div>
+  </div>
+  <aside class="notes">Every case was a choice about the animal, not the flow. Install, start from the examples. Bring us your animal. Questions?</aside>
+</section>
+
+<!-- 12 -->
+<section>
+  <h2 class="headline top">References and code</h2>
+  <ol class="refs">
+    <li>Muscutt, Dyke, Weymouth, Naish, Palmer et al. (2017) The four-flipper swimming method of plesiosaurs enabled efficient and effective locomotion. <i>Proc. R. Soc. B</i> 284, 20170951. <a href="https://doi.org/10.1098/rspb.2017.0951">doi:10.1098/rspb.2017.0951</a></li>
+    <li>Weymouth, Subramaniam &amp; Triantafyllou (2015) Ultra-fast escape maneuver of an octopus-inspired robot. <i>Bioinspir. Biomim.</i> 10, 016016. <a href="https://doi.org/10.1088/1748-3190/10/1/016016">doi:10.1088/1748-3190/10/1/016016</a></li>
+    <li>Micklem, Dong, Giorgio-Serchi, Yang, Thornton &amp; Weymouth (2026) Harnessing proprioception in aquatic soft wings enables hybrid passive-active disturbance rejection. <i>npj Robotics</i> 4, 16. <a href="https://doi.org/10.1038/s44182-026-00078-z">doi:10.1038/s44182-026-00078-z</a></li>
+    <li>Bujard, Giorgio-Serchi &amp; Weymouth (2021) A resonant squid-inspired robot unlocks biological propulsive efficiency. <i>Sci. Robot.</i> 6, eabd2971. <a href="https://doi.org/10.1126/scirobotics.abd2971">doi:10.1126/scirobotics.abd2971</a></li>
+    <li>Zurman-Nasution, Ganapathisubramani &amp; Weymouth (2021) Fin sweep angle does not determine flapping propulsive performance. <i>J. R. Soc. Interface</i> 18, 20210174. <a href="https://doi.org/10.1098/rsif.2021.0174">doi:10.1098/rsif.2021.0174</a></li>
+    <li>Zurman-Nasution, Weymouth &amp; Ganapathisubramani (2026) Boundary-layer flow dynamics of propulsive flapping foils with increasing Reynolds numbers. <i>J. Fluid Mech.</i> 1041, A32. <a href="https://doi.org/10.1017/jfm.2026.11951">doi:10.1017/jfm.2026.11951</a></li>
+    <li>van der Weide (2026) Numerical model of <i>Sarsia tubulosa</i> jellyfish. MSc thesis, TU Delft.</li>
+    <li>Sahin, Mohseni &amp; Colin (2009) The numerical comparison of flow patterns and propulsive performances for the hydromedusae <i>Sarsia tubulosa</i> and <i>Aequorea victoria</i>. <i>J. Exp. Biol.</i> 212, 2656–2667. <a href="https://doi.org/10.1242/jeb.025536">doi:10.1242/jeb.025536</a></li>
+    <li>Colin &amp; Costello (2002) Morphology, swimming performance and propulsive mode of six co-occurring hydromedusae. <i>J. Exp. Biol.</i> 205, 427–437. <a href="https://doi.org/10.1242/jeb.205.3.427">doi:10.1242/jeb.205.3.427</a></li>
+    <li>Weymouth &amp; Font (2025) WaterLily.jl: a differentiable and backend-agnostic Julia solver for incompressible viscous flow around dynamic bodies. <i>Comput. Phys. Commun.</i> 109748. <a href="https://doi.org/10.1016/j.cpc.2025.109748">doi:10.1016/j.cpc.2025.109748</a></li>
+    <li>Weymouth &amp; Lauber (2024) Using Biot–Savart to shrink Eulerian domains while maintaining or improving external flow accuracy. <a href="https://arxiv.org/abs/2404.09034">arXiv:2404.09034</a></li>
+    <li>Weymouth &amp; Yue (2011) Boundary data immersion method for Cartesian-grid simulations of fluid-body interaction problems. <i>J. Comput. Phys.</i> 230, 6233–6247. <a href="https://doi.org/10.1016/j.jcp.2011.04.022">doi:10.1016/j.jcp.2011.04.022</a></li>
+  </ol>
+  <ul class="refs code-links">
+    <li><a href="https://github.com/WaterLily-jl/WaterLily.jl">WaterLily.jl</a></li>
+    <li><a href="https://github.com/WaterLily-jl/WaterLily-Examples">WaterLily-Examples</a></li>
+    <li><a href="https://github.com/WaterLily-jl/ParametricBodies.jl">ParametricBodies.jl</a></li>
+    <li><a href="https://github.com/WaterLily-jl/WaterLilyMeshBodies.jl">WaterLilyMeshBodies.jl</a></li>
+    <li><a href="https://github.com/WaterLily-jl/BiotSavartBCs.jl">BiotSavartBCs.jl</a></li>
+    <li><a href="https://github.com/Ferrite-FEM/Ferrite.jl">Ferrite.jl</a></li>
+  </ul>
+  <div class="qr" data-qr="https://waterlily-jl.github.io/BiotSavartBCs.jl/talk/" style="left:1520px;right:auto;top:560px;width:260px;height:260px;padding:12px"></div>
+  <p class="qr-url" style="left:1520px;right:auto;top:835px;width:260px">These slides</p>
+  <aside class="notes">Not shown in the talk; for the online version.</aside>
+</section>
+
+</div></div>
+
+<script src="vendor/reveal/reveal.js"></script>
+<script src="vendor/reveal/plugin/notes/notes.js"></script>
+<script src="js/credits.js?v=1"></script>
+<script src="js/figures.js?v=4"></script>
+<script src="vendor/qrcode/qrcode.js"></script>
+<script src="js/deck.js?v=1"></script>
+<script>
+  Reveal.initialize({
+    width: 1920, height: 1080, margin: 0, minScale: 0.1, maxScale: 3,
+    center: false, controls: false, progress: false, slideNumber: false,
+    hash: true, transition: 'fade', transitionSpeed: 'slow', backgroundTransition: 'fade',
+    autoPlayMedia: true, preloadIframes: true, pdfSeparateFragments: false,
+    plugins: [RevealNotes],
+  });
+</script>
+</body>
+</html>

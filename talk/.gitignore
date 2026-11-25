@@ -1,0 +1,6 @@
+Manifest.toml
+
+# The repo ignores these everywhere; the deck needs its media
+!*.png
+!*.gif
+!*.mp4

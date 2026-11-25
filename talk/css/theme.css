@@ -1,0 +1,458 @@
+/* Still Designing Ships — cinematic reveal.js theme
+   Slide canvas is 1920×1080 with zero margin; all sizes below are canvas px. */
+
+@font-face { font-family: "Libertinus Serif"; src: url("../assets/fonts/LibertinusSerif-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; }
+@font-face { font-family: "Libertinus Serif"; src: url("../assets/fonts/LibertinusSerif-Italic.woff2") format("woff2"); font-weight: 400; font-style: italic; }
+@font-face { font-family: "Libertinus Serif"; src: url("../assets/fonts/LibertinusSerif-Bold.woff2") format("woff2"); font-weight: 700; font-style: normal; }
+@font-face { font-family: "Libertinus Serif"; src: url("../assets/fonts/LibertinusSerif-BoldItalic.woff2") format("woff2"); font-weight: 700; font-style: italic; }
+
+:root {
+  --bg: #070a0e;          /* near-black, a touch of deep water */
+  --ink: #f2eee6;         /* warm off-white */
+  --ink-dim: #a9a79f;
+  --ink-faint: #5d5f60;
+  --rule: #2a2f35;
+  --warm: #f0a53c;        /* amber: the hero series / emphasis */
+  --cool: #00a6d6;        /* TU Delft cyan: the contrast series */
+  --green: #5fd49a;       /* matches the wall-stress colour in Manuel Cabral's plot */
+  --shade: 4, 6, 9;       /* rgb of scrims and text shadows (the background, over photos) */
+  --credit: rgba(242, 238, 230, 0.6);
+  --water: #1d3a4a; --land: #1d2b35; --sea: #0e3242;
+  --ph1: #0d1117; --ph2: #10151c;
+  --card-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  --serif: "Libertinus Serif", Georgia, serif;
+}
+
+html, body, .reveal, .reveal-viewport { background: var(--bg); }
+
+/* Light theme, for rooms that can't be darkened: ?light in the URL, or press L.
+   Photos keep their colours; the scrims behind headlines become a pale haze. */
+html[data-theme="light"] {
+  --bg: #f5f3ee; --ink: #15181c; --ink-dim: #4f5357; --ink-faint: #8f9295; --rule: #d6d7d8;
+  --warm: #b3650a; --cool: #00739a; --green: #1f9a62;
+  --shade: 245, 243, 238;
+  --credit: rgba(21, 24, 28, 0.65);
+  --water: #9fc3d4; --land: #d9dddf; --sea: #cfe4ee;
+  --ph1: #e9e6df; --ph2: #e2dfd8;
+  --card-shadow: 0 16px 40px rgba(0, 0, 0, 0.18);
+}
+html[data-theme="light"] .reveal .scrim.top { background: linear-gradient(to bottom, rgba(var(--shade), 0.94) 0%, rgba(var(--shade), 0.72) 22%, rgba(var(--shade), 0) 46%); }
+html[data-theme="light"] .reveal .scrim { background: linear-gradient(to top, rgba(var(--shade), 0.94) 0%, rgba(var(--shade), 0.7) 24%, rgba(var(--shade), 0) 50%); }
+.reveal { font-family: var(--serif); color: var(--ink); font-size: 44px; }
+.reveal .slides { text-align: left; }
+.reveal .slides > section { width: 1920px; height: 1080px; padding: 0; }
+.reveal ::selection { background: var(--warm); color: var(--bg); }
+.reveal sup, .reveal sub { font-size: 0.65em; line-height: 0; }   /* reset.css flattens them */
+.reveal sup { vertical-align: super; }
+.reveal sub { vertical-align: sub; }
+
+/* ---------- Full-bleed media layers ------------------------------------ */
+.reveal .media {
+  position: absolute; inset: 0; overflow: hidden; background: var(--bg);
+  z-index: 0;   /* own stacking context: a later layer covers everything inside an earlier one */
+}
+.reveal .media > img, .reveal .media > video {
+  width: 100%; height: 100%; max-width: none; max-height: none; margin: 0;
+  object-fit: cover; display: block;
+}
+.reveal .media.contain > img, .reveal .media.contain > video { object-fit: contain; }
+/* Invert: dark-on-white images (e.g. a skeleton on white) shown light-on-dark */
+.reveal .media.invert > img { filter: invert(1) hue-rotate(180deg); background: #fff; }
+.reveal .media.invert { background: #000; }
+/* Two-panel slide: coded graphic on the left, a picture on the right */
+.reveal .figure.half-left { left: 110px; right: auto; width: 800px; top: 250px; height: 640px; bottom: auto; }
+.reveal .media.half-right { left: 980px; right: 60px; top: 230px; bottom: 170px; background: transparent; }
+.reveal .caption.tagline.half { left: 980px; max-width: 880px; bottom: 60px; font-size: 44px; }
+
+/* Cropped media (data-view): centre the cropped box */
+.reveal .media.viewbox { display: flex; align-items: center; justify-content: center; }
+
+/* framed75 (not "shrink": that is a reveal.js fragment effect): a clip at 75% width, framed under a top headline (for bright videos) */
+.reveal .media.framed75 { display: flex; justify-content: center; align-items: flex-start; padding-top: 180px; }
+.reveal .media.framed75 > video, .reveal .media.framed75 > img {
+  width: 75%; height: auto; border-radius: 14px; box-shadow: var(--card-shadow);
+}
+.reveal .overlay .caption.tagline, .reveal .media.framed75 > .caption.tagline { bottom: 36px; }
+
+/* Card under a top headline and above a bottom tagline */
+.reveal .media.card.low > img, .reveal .media.card.low > video { height: 62%; margin: 40px 0 0 0; }
+
+/* Inset: a wide figure sitting below a top headline */
+.reveal .media.inset { display: flex; justify-content: center; align-items: flex-start; padding-top: 175px; }
+.reveal .media.inset > img { width: 84%; height: auto; object-fit: contain; }
+.reveal .caption.medium { font-size: 64px; max-width: 1500px; line-height: 1.1; bottom: 150px; }
+.reveal .caption.bridge { bottom: 190px; font-size: 60px; }
+.reveal .wordeq.warm, .reveal .wordeq.warm i { color: var(--warm); }
+.reveal .wordeq.warm .frac > span:first-child { border-bottom-color: var(--warm); }
+.reveal .caption.tagline { font-size: 52px; bottom: 56px; max-width: 1700px; }
+.reveal .caption.tagline.right { left: 960px; width: 960px; max-width: none; text-align: center; }   /* centred on the right half */
+.reveal .sub.big { font-size: 46px; }
+.reveal .footnote {
+  position: absolute; z-index: 5; left: 110px; bottom: 90px; max-width: 1700px;
+  font-size: 38px; line-height: 1.3; color: var(--ink);
+}
+.reveal .footnote ul { margin: 12px 0 0; padding: 0; list-style: none; }
+.reveal .footnote li { margin-top: 8px; padding-left: 36px; position: relative; }
+.reveal .footnote li::before { content: "›"; position: absolute; left: 0; color: var(--warm); }
+.reveal .caption.small { font-size: 40px; bottom: 44px; color: var(--ink-dim); font-style: italic; }
+
+/* Card: portrait or white-background clips, framed and centred on the dark slide */
+.reveal .media.card { display: flex; align-items: center; justify-content: center; }
+.reveal .media.card > img, .reveal .media.card > video {
+  width: auto; height: 74%; max-width: 88%; margin-bottom: 11%; object-fit: contain;
+  border-radius: 14px; box-shadow: var(--card-shadow);
+}
+
+/* Side-by-side pair: <div class="split"> <div class="media">…</div> ×2 </div> */
+.reveal .split { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: var(--bg); }
+.reveal .split > .media { position: relative; inset: auto; }
+/* Name and date of a picture, bottom-right above its credit */
+.reveal .tag {
+  position: absolute; bottom: 52px; right: 28px; z-index: 6; max-width: 900px; text-align: right;
+  font-size: 24px; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700;
+  color: #fff;   /* always white on a black outline: it sits on photos in either theme */
+  -webkit-text-stroke: 2px #000; paint-order: stroke fill;
+  text-shadow: 0 0 6px rgba(0, 0, 0, 0.9), 0 1px 3px #000;
+}
+.reveal .split .tag { right: 48px; }
+
+/* Photo credit, bottom-right of its own media layer */
+.reveal .credit {
+  position: absolute; right: 28px; bottom: 18px; z-index: 3;
+  font-size: 18px; color: var(--credit); font-style: italic;
+  text-shadow: 0 1px 6px rgba(var(--shade), 0.9);
+}
+.reveal .credit a { color: var(--ink); text-decoration: none; }
+
+/* Cover: a photo (with its own headline) over a graphic slide, fading out on the first click */
+.reveal .cover { position: absolute; inset: 0; z-index: 10; background: var(--bg); }
+/* Overlay: a full-screen layer that fades in over a graphic, under the top headline */
+.reveal .overlay { position: absolute; inset: 0; z-index: 10; background: var(--bg); }
+.reveal .overlay.fragment, .reveal .cover.fragment { transition: opacity 0.8s ease, visibility 0.8s; }
+.reveal .caption {
+  position: absolute; z-index: 5; left: 110px; bottom: 96px;
+  font-size: 110px; line-height: 1; color: var(--warm); text-shadow: 0 2px 24px rgba(var(--shade), 0.6);
+}
+
+/* Beats: stacked layers, each new fragment fades in over the previous one */
+.reveal .beat.fragment { transition: opacity 0.7s ease, visibility 0.7s; }
+
+/* ---------- Missing-asset placeholder ---------------------------------- */
+.reveal .ph {
+  position: absolute; inset: 40px; display: flex; flex-direction: column;
+  justify-content: center; align-items: center; text-align: center; gap: 22px;
+  border: 3px dashed var(--ink-faint); border-radius: 18px;
+  background: repeating-linear-gradient(135deg, var(--ph1) 0 24px, var(--ph2) 24px 48px);
+  color: var(--ink-dim);
+}
+.reveal .split .ph { inset: 24px; }
+.reveal .ph .ph-file { font-family: Consolas, "Cascadia Mono", monospace; font-size: 34px; color: var(--warm); }
+.reveal .ph .ph-alt { font-size: 38px; max-width: 80%; line-height: 1.25; color: var(--ink); }
+.reveal .ph .ph-kind { font-size: 22px; letter-spacing: 0.2em; text-transform: uppercase; }
+body.hide-placeholders .reveal .ph { display: none; }
+
+/* ---------- Headlines --------------------------------------------------- */
+.reveal .scrim {
+  position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  background: linear-gradient(to top, rgba(var(--shade), 0.88) 0%, rgba(var(--shade), 0.55) 26%, rgba(var(--shade), 0) 50%);
+}
+.reveal .scrim:not(.top) { -webkit-mask-image: linear-gradient(to right, #000 55%, transparent 88%); mask-image: linear-gradient(to right, #000 55%, transparent 88%); }
+.reveal .scrim.top { background: linear-gradient(to bottom, rgba(var(--shade), 0.85) 0%, rgba(var(--shade), 0.45) 24%, rgba(var(--shade), 0) 44%); }
+
+.reveal h1, .reveal h2 {
+  font-family: var(--serif); color: var(--ink); text-transform: none;
+  letter-spacing: -0.005em; margin: 0; text-shadow: 0 2px 24px rgba(var(--shade), 0.55);
+}
+.reveal .headline {
+  position: absolute; z-index: 5; left: 110px; bottom: 96px; max-width: 1700px;
+  font-size: 58px; line-height: 1.06; font-weight: 400;
+}
+.reveal .headline.top { top: 88px; bottom: auto; max-width: 1700px; font-size: 56px; z-index: 12; }
+.reveal .headline em { color: var(--warm); font-style: italic; }
+.reveal .sub {
+  display: block; margin-top: 22px; font-size: 34px; line-height: 1.3;
+  color: var(--ink-dim); font-style: italic;
+}
+
+/* Title slide */
+.reveal .title h1 { font-size: 104px; line-height: 1.0; font-weight: 400; max-width: 1500px; }
+.reveal .title .byline { margin-top: 40px; font-size: 40px; color: var(--ink-dim); letter-spacing: 0.02em; }
+.reveal .title .byline b { color: var(--ink); font-weight: 400; }
+
+/* ---------- Coded-graphic slides --------------------------------------- */
+.reveal .figure { position: absolute; left: 110px; right: 110px; top: 250px; bottom: 80px; }
+.reveal .figure svg { width: 100%; height: 100%; overflow: visible; display: block; }
+.reveal svg text { font-family: var(--serif); fill: var(--ink); text-rendering: geometricPrecision; }
+.reveal svg .dim   { fill: var(--ink-dim); }
+.reveal svg .faint { fill: var(--ink-faint); }
+.reveal svg .warm  { fill: var(--warm); }
+.reveal svg .cool  { fill: var(--cool); }
+.reveal svg .axis  { stroke: var(--ink-faint); stroke-width: 2; fill: none; }
+.reveal svg .grid  { stroke: var(--rule); stroke-width: 1.5; fill: none; }
+.reveal svg .water { stroke: var(--water); stroke-width: 2; fill: none; }
+.reveal svg .hull  { fill: var(--ink); }
+.reveal svg .rig { stroke: var(--ink); stroke-width: 3; fill: none; }
+.reveal svg .hull.hero { fill: var(--warm); }
+.reveal svg .ghost { fill: none; stroke: var(--ink-dim); stroke-width: 2.5; stroke-dasharray: 10 8; }
+.reveal svg .trend { stroke: var(--warm); stroke-width: 5; fill: none; stroke-linecap: round; }
+.reveal svg .trend.naive { stroke: var(--ink-dim); stroke-width: 3; stroke-dasharray: 14 10; }
+.reveal svg .dot { fill: var(--ink); stroke: var(--bg); stroke-width: 4; }
+.reveal svg g.fragment { transition: opacity 0.6s ease; }
+
+/* Bars grow in when their slide (or fragment) becomes visible */
+.reveal svg .bar { transform-box: fill-box; transition: transform 0.9s cubic-bezier(.2,.7,.2,1); }
+.reveal svg .bar.up   { fill: var(--warm); transform-origin: left center; }
+.reveal svg .bar.down { fill: var(--cool); transform-origin: right center; }
+.reveal section:not(.present) svg .bar,
+.reveal svg g.fragment:not(.visible) .bar { transform: scaleX(0); }
+.reveal svg .bar.vert { transform-origin: center bottom; }
+.reveal section:not(.present) svg .bar.vert,
+.reveal svg g.fragment:not(.visible) .bar.vert { transform: scaleY(0); }
+
+/* Rough wall */
+.reveal svg .wall { fill: var(--ink-faint); }
+.reveal svg .flowline { fill: none; stroke: var(--cool); stroke-width: 3; stroke-dasharray: 22 16; animation: flow var(--T) linear infinite; }
+@keyframes flow { to { stroke-dashoffset: -38; } }
+.reveal svg .stress { stroke: var(--green); stroke-width: 5; stroke-linecap: round; }
+.reveal svg .green, .reveal svg .green-fill { fill: var(--green); }
+@media (prefers-reduced-motion: reduce) { .reveal svg .flowline { animation: none; } }
+
+/* Turning circles */
+.reveal svg .turn-path { fill: none; stroke-width: 3; stroke-dasharray: 10 8; stroke: var(--ink-dim); }
+.reveal svg .turn-path.animal { stroke: var(--warm); }
+.reveal svg .turn-body { fill: var(--ink); }
+.reveal svg .turn-body.animal { fill: var(--warm); }
+.reveal svg .turn-path.sail { stroke: var(--cool); }
+.reveal svg .turn-body.sail { fill: var(--cool); }
+.reveal svg .dim-line { stroke: var(--ink-dim); stroke-width: 2; }
+
+/* Map */
+.reveal svg .land { fill: var(--land); }
+.reveal svg .route { fill: none; stroke: var(--warm); stroke-width: 5; stroke-linecap: round;
+  stroke-dasharray: 1; stroke-dashoffset: 1; }
+.reveal svg g.fragment.visible .route { animation: draw-route 4.5s ease-in-out 0.3s forwards; }
+@keyframes draw-route { to { stroke-dashoffset: 0; } }
+
+/* Water */
+.reveal svg .sea { fill: var(--sea); fill-opacity: 0.88; }
+.reveal svg .surface { fill: none; stroke: var(--cool); stroke-width: 4; stroke-linejoin: round; }
+.reveal svg .drift { animation: drift var(--T) linear infinite; }
+@keyframes drift { from { transform: translateX(calc(-1 * var(--dx))); } to { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .reveal svg .drift { animation: none; } }
+
+/* ---------- Word equations -------------------------------------------- */
+/* <div class="wordeq">Froude number <i>=</i>
+     <span class="frac"><span>ship speed</span><span>wave speed</span></span></div> */
+.reveal .wordeq {
+  position: absolute; left: 110px; bottom: 90px; z-index: 5;
+  display: flex; align-items: center; gap: 30px; flex-wrap: nowrap;
+  font-size: 46px; line-height: 1.1; color: var(--ink);
+}
+.reveal .wordeq.top { top: 250px; bottom: auto; }
+.reveal .wordeq b { font-weight: 400; color: var(--warm); }
+.reveal .wordeq i { font-style: normal; color: var(--ink-dim); }
+.reveal .frac { display: inline-flex; flex-direction: column; align-items: center; text-align: center; }
+.reveal .frac > span:first-child { padding: 0 16px 10px; border-bottom: 3px solid var(--ink-dim); }
+.reveal .frac > span:last-child { padding: 10px 16px 0; }
+
+/* Closing slide */
+.reveal .thanks { position: absolute; left: 110px; top: 300px; }
+.reveal .thanks h1 { font-size: 120px; font-weight: 400; }
+.reveal .thanks p { font-size: 44px; color: var(--ink-dim); margin: 36px 0 0; line-height: 1.4; }
+.reveal .thanks a { color: var(--cool); }
+.reveal .qr { position: absolute; right: 150px; top: 250px; width: 420px; height: 420px; background: #fff; border-radius: 16px; padding: 14px; box-sizing: border-box; }
+.reveal .qr svg { width: 100%; height: 100%; display: block; }
+.reveal .qr-url { position: absolute; right: 150px; top: 690px; width: 420px; margin: 0; text-align: center; font-size: 26px; color: var(--ink-dim); }
+.reveal .qr .ph { inset: 0; }
+.reveal .logo { position: absolute; left: 110px; bottom: 90px; height: 90px; }
+
+/* Credits slide */
+.reveal .credits-list {
+  position: absolute; left: 110px; right: 110px; top: 190px; margin: 0; padding: 0;
+  list-style: none; columns: 2; column-gap: 60px; font-size: 20px; line-height: 1.35; color: var(--ink-dim);
+}
+.reveal .credits-list li { break-inside: avoid; margin-bottom: 8px; }
+.reveal .credits-list a { color: var(--ink); text-decoration: none; }
+.reveal .credits-own { position: absolute; left: 110px; bottom: 60px; font-size: 22px; color: var(--ink-dim); }
+
+/* Speaker-view/PDF niceties */
+.reveal .slide-number { display: none; }
+
+/* ---------- Seminar additions ------------------------------------------ */
+/* Bullet points beside a figure (meta slides) */
+.reveal .points {
+  position: absolute; z-index: 5; left: 110px; top: 260px; max-width: 1080px; margin: 0; padding: 0;
+  list-style: none; font-size: 44px; line-height: 1.25;
+}
+.reveal .points.wide { max-width: 1700px; }
+.reveal .points li { margin: 0 0 30px; padding-left: 44px; position: relative; }
+.reveal .points li::before { content: "›"; position: absolute; left: 0; color: var(--warm); }
+.reveal .points em { color: var(--warm); font-style: normal; }
+.reveal .points .ask { color: var(--warm); font-style: normal; }
+.reveal .points .ask::before { content: none; }
+.reveal .points .ask { padding-left: 0; }
+
+/* "You are here" hourglass on the meta slides */
+.reveal .figure.map { left: auto; right: 60px; top: auto; bottom: 50px; width: 300px; height: 200px; }
+/* Examples beside the bullets: each beat replaces the last */
+.reveal .figure.side { left: 1000px; right: 90px; top: 250px; bottom: 270px; }
+.reveal .figure.side { transition: opacity 0.6s ease; }
+.reveal .figure.side:has(~ .figure.side.fragment.visible) { opacity: 0; }
+/* Theory recap: each step's pictures, new ones framed warm */
+.reveal .steps { position: absolute; left: 110px; right: 110px; top: 210px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 30px; }
+.reveal .steps h4 { font-family: var(--serif); font-weight: 400; font-size: 26px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-dim); margin: 0 0 12px; }
+.reveal .steps .t { position: relative; height: 240px; margin-bottom: 18px; border: 3px solid var(--rule); border-radius: 8px; overflow: hidden; background: var(--bg); }
+.reveal .steps .t.new { border-color: var(--warm); }
+.reveal .steps .t img { width: 100%; height: 100%; object-fit: contain; margin: 0; }
+.reveal .steps .t .figure { inset: 8px; }
+.reveal .steps .t span { position: absolute; right: 0; bottom: 0; padding: 2px 10px; font-size: 22px; color: var(--ink-dim); background: var(--bg); }
+.reveal .steps .t.new span { color: var(--warm); }
+.reveal .steps.three { grid-template-columns: repeat(3, 1fr); gap: 50px; }
+.reveal .steps h4 em { color: var(--warm); font-style: normal; text-transform: none; }
+.reveal .steps p { margin: 0; font-size: 32px; line-height: 1.25; }
+/* A quoted phrase and what it is, for before/after examples */
+.reveal .quote { font-size: 44px; line-height: 1.25; margin-bottom: 60px; }
+.reveal .quote.dim { font-size: 32px; font-style: italic; color: var(--ink-dim); }
+.reveal .quote span { display: block; margin-top: 10px; font-size: 22px; font-style: normal; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
+/* Every slide title so far, filled in by js/figures.js */
+.reveal .titles { position: absolute; left: 110px; right: 110px; top: 260px; margin: 0; padding-left: 70px; font-size: 54px; line-height: 1.2; }
+.reveal .titles li { margin-bottom: 50px; }
+/* Citation line, bottom-left: who the slide's claims come from */
+.reveal .cite {
+  position: absolute; z-index: 11; left: 110px; bottom: 22px; max-width: 1400px;
+  font-size: 22px; font-style: italic; color: var(--ink-dim); text-shadow: 0 1px 6px rgba(var(--shade), 0.9);
+}
+/* Quiz: a question and its options; the answer lights up on a click */
+.reveal .quiz { position: absolute; z-index: 5; left: 110px; top: 480px; font-size: 46px; }
+.reveal .quiz ol { margin: 30px 0 0 60px; list-style: upper-alpha; line-height: 1.5; color: var(--ink-dim); }
+.reveal .quiz .answer.visible { color: var(--warm); }
+/* Quote headline, or a bullet, with its source */
+.reveal .headline .source, .reveal .points .source { display: block; margin-top: 14px; font-size: 30px; color: var(--ink-dim); font-style: italic; }
+.reveal .media.inset.small { padding-top: 260px; }
+.reveal .media.inset.small > img { width: 58%; }
+
+/* A page of the paper, quoted as the "before" */
+.reveal .paper {
+  position: absolute; z-index: 5; left: 260px; right: 260px; top: 210px;
+  padding: 44px 60px; background: #fffdf8; color: #222; border-radius: 6px; box-shadow: var(--card-shadow);
+  font-size: 30px; line-height: 1.4; text-align: justify;
+}
+.reveal .paper h3 { font-family: var(--serif); font-size: 40px; text-transform: none; text-align: center; color: #111; margin: 0 0 8px; }
+.reveal .paper .venue { text-align: center; font-size: 24px; color: #666; margin-bottom: 26px; font-style: italic; }
+.reveal .paper p { margin: 0 0 18px; }
+.reveal .paper.small { font-size: 22px; top: 190px; }
+.reveal .paper mark { background: transparent; color: inherit; transition: background 0.5s; }
+.reveal .paper mark.visible, .reveal .paper mark.on { background: #ffd98a; }
+
+/* Hook cards, side by side */
+.reveal .cards { position: absolute; left: 110px; right: 110px; top: 260px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 36px; }
+.reveal .cards > div { border-top: 6px solid var(--ink-faint); padding-top: 24px; font-size: 38px; line-height: 1.2; }
+.reveal .cards > div.lit { border-top-color: var(--warm); }
+.reveal .cards b { display: block; font-weight: 400; font-size: 26px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-dim); margin-bottom: 18px; }
+
+/* Big numbers */
+.reveal .bignums { position: absolute; z-index: 5; left: 110px; right: 110px; bottom: 90px; display: flex; gap: 70px; }
+.reveal .bignums > div { font-size: 30px; color: var(--ink-dim); line-height: 1.2; text-shadow: 0 1px 12px rgba(var(--shade), 0.9); }
+.reveal .bignums b { display: block; font-weight: 400; font-size: 96px; color: var(--warm); line-height: 1; margin-bottom: 8px; }
+
+/* Display equation */
+.reveal .eq { position: absolute; z-index: 5; font-size: 56px; font-style: italic; color: var(--warm); }
+
+/* Three panels in a row */
+.reveal .split3 { position: absolute; left: 0; right: 0; top: 220px; bottom: 60px; display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; padding: 0 60px; }
+.reveal .split3 > .media { position: relative; inset: auto; background: transparent; }
+.reveal .split3 .tag { bottom: 12px; }
+
+/* Live demo */
+.reveal .demo { position: absolute; left: 110px; right: 110px; top: 230px; bottom: 60px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
+.reveal .demo canvas { width: 100%; aspect-ratio: 2 / 1; background: var(--ph1); border-radius: 8px; image-rendering: auto; }
+.reveal .demo h4 { font-family: var(--serif); text-transform: none; font-weight: 400; font-size: 34px; margin: 0 0 12px; color: var(--ink-dim); }
+.reveal .demo .clock { font-size: 34px; margin-top: 10px; color: var(--warm); font-variant-numeric: tabular-nums; }
+.reveal .demo .clock a { color: inherit; }
+.reveal .demo .sliders { grid-column: 1 / span 2; display: flex; gap: 40px; font-size: 32px; align-items: center; }
+.reveal .demo .sliders label { display: flex; gap: 16px; align-items: center; }
+.reveal .demo .sliders label:has(:disabled) { opacity: 0.3; }
+.reveal .demo input[type=range] { width: 240px; }
+.reveal .demo select { font: inherit; font-size: 28px; }
+.reveal .demo .status { font-size: 24px; color: var(--ink-faint); margin-left: auto; }
+
+/* ---------- WaterLily for biological flows ------------------------------ */
+@font-face { font-family: "JuliaMono"; src: url("../assets/fonts/JuliaMono-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; }
+
+/* Smaller type throughout */
+.reveal { font-size: 34px; }
+.reveal .headline.top { font-size: 50px; max-width: 1450px; }
+.reveal .title h1 { font-size: 92px; }
+.reveal .title .byline { font-size: 32px; }
+.reveal .points { font-size: 34px; }
+.reveal .points li { margin-bottom: 22px; }
+.reveal .cards > div { font-size: 28px; }
+.reveal .cards b { font-size: 20px; margin-bottom: 12px; }
+.reveal .caption.medium { font-size: 46px; }
+.reveal .bignums b { font-size: 70px; }
+.reveal .bignums > div { font-size: 24px; text-shadow: none; }
+.reveal .cite { font-size: 20px; max-width: 1150px; }
+.reveal .qr-url { font-size: 24px; }
+
+/* Media labels: plain ink, readable on the cream background */
+.reveal .tag { color: var(--ink-dim); -webkit-text-stroke: 0; text-shadow: none; font-weight: 400; font-size: 22px; letter-spacing: 0.08em; }
+
+/* Corner card: the talk's title on every slide, and what this case models */
+.reveal .needs {
+  position: absolute; z-index: 12; right: 40px; bottom: 26px; max-width: 520px; padding: 10px 18px;
+  border-left: 5px solid var(--warm); background: rgba(var(--shade), 0.92); font-size: 22px; line-height: 1.3; color: var(--ink-dim);
+}
+.reveal .needs b { display: block; font-weight: 400; font-size: 18px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--warm); }
+.reveal .needs em { color: var(--ink); }
+
+/* Slide 2: an icon per headache; the pain struck, its fix beneath */
+.reveal .pains-big { top: 250px; gap: 44px; }
+.reveal .pains-big .icon { position: relative; height: 190px; margin-bottom: 18px; }
+.reveal .pains-big .icon .figure { inset: 0; }
+.reveal .pains-big > div > span { display: block; }
+.reveal .pains-big .fix { margin-top: 22px; color: var(--ink); }
+.reveal .pains-big .fix i { display: block; font-style: normal; color: var(--warm); margin-bottom: 4px; }
+
+/* Two media boxes under a top headline */
+.reveal .media.box-left { left: 60px; right: 990px; top: 230px; bottom: 170px; background: transparent; }
+.reveal .media.box-right { left: 990px; right: 60px; top: 230px; bottom: 170px; background: transparent; }
+/* One line of takeaway above the citation */
+.reveal .ask-line { position: absolute; z-index: 11; left: 110px; bottom: 110px; max-width: 1150px; margin: 0; font-size: 32px; line-height: 1.25; }
+.reveal .ask-line em { color: var(--warm); font-style: normal; }
+/* Caption under a media box */
+.reveal .vcap { position: absolute; z-index: 5; margin: 0; font-size: 28px; line-height: 1.3; color: var(--ink-dim); }
+.reveal .vcap b { display: block; font-weight: 400; color: var(--ink); }
+
+/* Julia code, coloured as VS Code's Dark+ theme */
+.reveal pre.code {
+  position: absolute; left: 110px; top: 230px; width: 1040px; margin: 0; padding: 26px 32px; box-sizing: border-box;
+  background: #1e1e1e; color: #d4d4d4; border-radius: 10px; box-shadow: none; font-size: 25px; line-height: 1.45;
+}
+.reveal pre.code code { font-family: "JuliaMono", Consolas, monospace; max-height: none; padding: 0; white-space: pre; }
+.reveal pre.code .k { color: #c586c0; }
+.reveal pre.code .f { color: #dcdcaa; }
+.reveal pre.code .n { color: #b5cea8; }
+.reveal pre.code .t { color: #4ec9b0; }
+.reveal pre.code .c { color: #6a9955; }
+.reveal pre.code .s { color: #ce9178; }
+.reveal .jl { font-family: "JuliaMono", Consolas, monospace; font-size: 0.8em; color: var(--warm); }
+
+/* Closing gallery */
+.reveal .gallery { position: absolute; left: 80px; right: 640px; top: 210px; bottom: 60px; display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: 1fr 1.25fr; gap: 18px; }
+.reveal .gallery > .media { position: relative; inset: auto; background: transparent; grid-column: span 2; }
+.reveal .gallery > .media.wide { grid-column: span 3; }
+.reveal .gallery .tag { bottom: 0; right: 0; left: 0; text-align: center; font-size: 20px; }
+.reveal .closer { position: absolute; right: 110px; width: 460px; top: 760px; margin: 0; text-align: center; font-size: 32px; line-height: 1.3; }
+.reveal .vcap em { color: var(--warm); font-style: normal; }
+/* Frame the cropped Re = 10^6 snapshot like the other two, whose frames are in the image */
+.reveal .media.framed > img { outline: 2px solid #8c8c8c; outline-offset: -1px; }
+/* References slide */
+.reveal .refs { position: absolute; left: 110px; top: 180px; width: 1330px; margin: 0; padding-left: 36px; font-size: 20px; line-height: 1.25; }
+.reveal .refs li { margin-bottom: 7px; }
+.reveal .refs a { color: var(--cool); text-decoration: none; }
+.reveal .refs.code-links { left: 1520px; width: 340px; list-style: none; padding-left: 0; font-size: 26px; line-height: 1.6; }
+/* Intro slide: four videos at once */
+.reveal .grid4 { position: absolute; left: 200px; right: 200px; top: 190px; bottom: 60px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 14px; }
+.reveal .grid4 > .media { position: relative; inset: auto; background: transparent; padding-bottom: 38px; box-sizing: border-box; }
+.reveal .vref { position: absolute; left: 0; right: 0; bottom: 4px; text-align: center; font-size: 20px; font-style: italic; color: var(--ink-dim); }
+.reveal .animal { position: absolute; z-index: 2; top: 14px; left: 50%; transform: translateX(-50%); padding: 4px 18px; background: #fff; color: #000; font-size: 32px; }
