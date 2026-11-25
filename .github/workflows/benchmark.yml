@@ -1,6 +1,6 @@
 name: Benchmark
 
-# On-demand benchmarks of a pull request against its base branch with WaterLily-Benchmarks, both on WaterLily master:
+# On-demand benchmarks of a pull request against its base branch with WaterLily-Benchmarks, both on WaterLily main:
 # a maintainer comments `/benchmark`, optionally followed by benchmark.sh arguments (e.g. `/benchmark -c "jelly-biotsavart" -r 3`),
 # or runs it from the Actions tab. Default: jelly-biotsavart and sphere-biotsavart on CPUx01 and CPUx02, 2 repetitions;
 # the report is a PR comment that later runs update. Only branches of this repository can run (not forks).
@@ -72,11 +72,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: gh api -X POST "repos/$GITHUB_REPOSITORY/issues/comments/${{ github.event.comment.id }}/reactions" -f content=rocket
 
-      - name: Check out WaterLily master
+      - name: Check out WaterLily main
         uses: actions/checkout@v7
         with:
           repository: WaterLily-jl/WaterLily.jl
-          ref: master
+          ref: main
           path: WaterLily.jl
           fetch-depth: 0  # other refs can run with -w
           persist-credentials: false
@@ -86,8 +86,8 @@ jobs:
         uses: WaterLily-jl/WaterLily-Benchmarks@main
         with:
           waterlily-dir: ${{ github.workspace }}/WaterLily.jl
-          base: master
-          head: master
+          base: main
+          head: main
           args: ${{ steps.pr.outputs.args }}
           pr: ${{ steps.pr.outputs.number }}
           artifact: benchmark-pr-${{ steps.pr.outputs.number }}
