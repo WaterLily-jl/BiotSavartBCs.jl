@@ -45,7 +45,7 @@ function transition_box(μ₀,perdir)
     CartesianIndices(ntuple(d->d∈perdir ? (1:size(μ₀,d)) : lo[d]-1:hi[d]+1,ndims(μ₀)-1))
 end
 coarsen(B,l) = l==1 ? B : coarsen(down(B),l-1)
-import WaterLily: div,δv,perBC!,mult,L₁,L∞,L₁L∞,Vcycle!,smooth!
+import WaterLily: project_source,perBC!,mult,L₁,L∞,L₁L∞,Vcycle!,smooth!
 
 """
     mom_project!(a::AbstractFlow, b::BiotSavartPoisson, w::Int, t; tol=2e-3, itmx=32)
@@ -56,7 +56,7 @@ function WaterLily.mom_project!(a::AbstractFlow{N}, b::BiotSavartPoisson, w::Int
     dt = a.Δt[end]/w; a.p .*= dt
     U,top = BCTuple(a.uBC,t,N),b.ml.levels[1]
     perBC!(a.u,a.perdir); fill_ω!(b.ω,a.u,a.perdir); body_ω!(b,a)
-    @inside top.r[I] = ifelse(top.iD[I]==0,zero(eltype(top.r)),div(I,a.u)-δv(top.D,I)*div(I,a.V)-mult(I,top.L,top.D,a.p))
+    @inside top.r[I] = ifelse(top.iD[I]==0,zero(eltype(top.r)),project_source(I,a.u,a.V,top.L)-mult(I,top.L,top.D,a.p))
     biotBC!(b,a,U)
 
     r₁tol,r₁ = WaterLily.l1n_tol(top,tol),L₁(top); nᵖ=nᵇ=0
