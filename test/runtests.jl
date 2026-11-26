@@ -5,6 +5,8 @@ using WaterLily
 using WaterLily: @loop
 using BiotSavartBCs: inside_u,restrict!,project!,down,front,step
 using BiotSavartBCs: MLArray,collect_targets,flatten_targets,fill_ω!,biotBC!,pflowBC!
+using CUDA
+arrays = CUDA.functional() ? (Array,CuArray) : (Array,)
 @testset "util.jl" begin
     a = zeros(Int,(4,4,6,3))
     @loop a[I] += 1 over I in inside_u(a,buff=2)
@@ -83,7 +85,7 @@ function hill_vortex(N;D=3N/4)
         cos(θ)*v_r-sin(θ)*v_θ
     end
 end
-divergence(u) = (r = zeros(eltype(u),size(u)[1:end-1]); WaterLily.@inside r[I] = WaterLily.div(I,u); r)
+divergence(u) = (r = fill!(similar(u,size(u)[1:end-1]),0); WaterLily.@inside r[I] = WaterLily.div(I,u); r)
 
 using BiotSavartBCs: slice
 @testset "velocity.jl" begin
@@ -295,27 +297,29 @@ using WaterLily: δ
     end
 
     # biotBC! is linear in (u,U): the partials of a Dual run are the plain run of the perturbation
-    function bc(u,U;off=(),fmm=true)
-        ω = MLArray(zero(u)); tar = collect_targets(ω,off); ftar = flatten_targets(tar)
+    function bc(u,U;off=(),fmm=true,mem=Array)
+        ω = MLArray(zero(u)); tar = mem.(collect_targets(ω,off)); ftar = flatten_targets(tar)
         fill_ω!(ω,u); r = divergence(u); biotBC!(r,u,U,ω,tar,ftar;fmm); r,u
     end
     same(a,b) = maximum(abs,a.-b) < 1e-10
-    for (dims,U,V,off,fmm) in (((34,34,2),(1.,0.),(0.5,0.25),(),true),((26,26,26,3),(0.,0.,1.),(0.5,0.25,-1.),(),true),
-                               ((26,26,26,3),(1.,0.,0.),(0.5,0.25,-1.),(-1,-2),false))
-        a,b = rand(dims...),rand(dims...)
-        (ra,ua),(rb,ub),(r,u) = bc(copy(a),U;off,fmm),bc(copy(b),V;off,fmm),bc(Dual.(a,b),Dual.(U,V);off,fmm)
+    for mem in arrays, (dims,U,V,off,fmm) in (((34,34,2),(1.,0.),(0.5,0.25),(),true),((26,26,26,3),(0.,0.,1.),(0.5,0.25,-1.),(),true),
+                                              ((26,26,26,3),(1.,0.,0.),(0.5,0.25,-1.),(-1,-2),false))
+        a,b = mem(rand(dims...)),mem(rand(dims...))
+        (ra,ua),(rb,ub),(r,u) = bc(copy(a),U;off,fmm,mem),bc(copy(b),V;off,fmm,mem),bc(Dual.(a,b),Dual.(U,V);off,fmm,mem)
         @test same(value.(r),ra) && same(value.(u),ua) && same(partials.(r,1),rb) && same(partials.(u,1),ub)
         Δ = r.-divergence(u) # r tracks the flux change, also where targets share a cell
         @test same(value.(Δ),0) && same(partials.(Δ,1),0)
     end
 
     # The derivative of a simulation with respect to the inflow velocity matches central finite differences
-    function drag(U;D=16,m=4D)
-        sim = BiotSimulation((m,m),(U,0),D;body=AutoBody((x,t)->√sum(abs2,x .- m/2)-D/2),ν=D/1e3,T=typeof(U))
+    function drag(U;D=16,m=4D,mem=Array)
+        sim = BiotSimulation((m,m),(U,0),D;body=AutoBody((x,t)->√sum(abs2,x .- m/2)-D/2),ν=D/1e3,T=typeof(U),mem)
         for _ in 1:3; sim_step!(sim;remeasure=false,poisson_kwargs=(tol=1e-10,itmx=100)); end
         WaterLily.pressure_force(sim)[1],sim.pois.ml.n
     end
-    h = 1e-6; (F,n),(F₊,_),(F₋,_) = drag(Dual(1.,1.)),drag(1+h),drag(1-h)
-    @test value(F) ≈ drag(1.)[1] && n == drag(1.)[2] # same values and V-cycles as the plain run
-    @test partials(F,1) ≈ (F₊-F₋)/2h rtol=1e-6
+    for mem in arrays # on GPUs, Duals take the non-atomic path
+        h = 1e-6; (F,n),(F₀,n₀),(F₊,_),(F₋,_) = drag(Dual(1.,1.);mem),drag(1.;mem),drag(1+h;mem),drag(1-h;mem)
+        @test value(F) ≈ F₀ && n == n₀ # same values and V-cycles as the plain run
+        @test partials(F,1) ≈ (F₊-F₋)/2h rtol=1e-6
+    end
 end
