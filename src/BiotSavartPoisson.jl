@@ -41,9 +41,13 @@ function near_targets(B,ω,ftar,perdir)
 end
 function transition_box(μ₀,perdir)
     R = CartesianIndices(μ₀); none = (front(last(R)),front(first(R)))
-    lo,hi = AK.mapreduce(I->0<@inbounds(μ₀[I])<1 ? (front(I),front(I)) : none,((a,b),(c,d))->(min(a,c),max(b,d)),R;init=none,backend=get_backend(μ₀))
+    lo,hi = boxreduce(get_backend(μ₀),I->0<@inbounds(μ₀[I])<1 ? (front(I),front(I)) : none,((a,b),(c,d))->(min(a,c),max(b,d)),R,none)
     CartesianIndices(ntuple(d->d∈perdir ? (1:size(μ₀,d)) : lo[d]-1:hi[d]+1,ndims(μ₀)-1))
 end
+# AcceleratedKernels on GPUs only, as WaterLily's reductions: on the CPU (PoCL) its kernel launch allocates
+using WaterLily: CPU,Backend
+boxreduce(::CPU,f,op,R,init) = mapreduce(f,op,R;init)
+boxreduce(B::Backend,f,op,R,init) = AK.mapreduce(f,op,R;init,backend=B)
 coarsen(B,l) = l==1 ? B : coarsen(down(B),l-1)
 import WaterLily: project_source,perBC!,mult,L₁,L∞,L₁L∞,Vcycle!,smooth!
 
