@@ -5,16 +5,16 @@ Pressure solver for `flow` with Biot-Savart boundary conditions, for use in the 
 of a `WaterLily.Simulation`. `BiotSimulation` sets this up for you and describes the keyword
 arguments. The fields are internal.
 """
-struct BiotSavartPoisson{T,S,V} <: AbstractPoisson{T,S,V}
-    ml   :: MultiLevelPoisson{T,S,V} # wrapped standard pressure solver
-    ω    :: NTuple         # multi-level vorticity (top level aliases `flow.f`)
-    tar  :: NTuple         # domain boundary target index arrays per multigrid level
-    ftar :: AbstractVector # flattened target list for kernel dispatch
-    fmm  :: Bool           # use Fast Multi-level Method (`true`) or tree-sum (`false`)
-    sym  :: Tuple          # symmetry plane faces
-    own  :: NTuple         # each level's own target sums from the last full FMM
-    box  :: Base.RefValue{CartesianIndices} # where a pressure update changes ω, see `near_targets`
-    idx  :: Base.RefValue{AbstractVector}   # flat targets that can see that box
+struct BiotSavartPoisson{T,S,V,M<:MultiLevelPoisson{T,S,V},W<:NTuple,R<:NTuple,F<:AbstractVector,Y<:Tuple,O<:NTuple,B<:CartesianIndices,I<:AbstractVector} <: AbstractPoisson{T,S,V}
+    ml   :: M                # wrapped standard pressure solver
+    ω    :: W                # multi-level vorticity (top level aliases `flow.f`)
+    tar  :: R                # domain boundary target index arrays per multigrid level
+    ftar :: F                # flattened target list for kernel dispatch
+    fmm  :: Bool             # use Fast Multi-level Method (`true`) or tree-sum (`false`)
+    sym  :: Y                # symmetry plane faces
+    own  :: O                # each level's own target sums from the last full FMM
+    box  :: Base.RefValue{B} # where a pressure update changes ω, see `near_targets`
+    idx  :: Base.RefValue{I} # flat targets that can see that box
     function BiotSavartPoisson(flow; nonbiotfaces=(), fmm=true, mem=Array, symmetry=())
         flow.exitBC && throw(ArgumentError("exitBC=true is ignored when using Biot-Savart BCs"))
         perdir = flow.perdir
@@ -25,13 +25,15 @@ struct BiotSavartPoisson{T,S,V} <: AbstractPoisson{T,S,V}
         tar  = mem.(collect_targets(ω, (nonbiotfaces...,symmetry...,perdir...,(-).(perdir)...))) # no targets on these faces
         ftar = flatten_targets(tar)
         own = map(t->similar(t,eltype(flow.p)),tar)
-        set_idx!(new{eltype(flow.p),typeof(flow.p),typeof(flow.μ₀)}(ml,ω,tar,ftar,fmm,symmetry,own,Ref{CartesianIndices}(),Ref{AbstractVector}()))
+        box = transition_box(ml.levels[1].L,perdir); idx = near_targets(box,ω,ftar,perdir)
+        new{eltype(flow.p),typeof(flow.p),typeof(flow.μ₀),typeof(ml),typeof(ω),typeof(tar),typeof(ftar),typeof(symmetry),typeof(own),typeof(box),typeof(idx)}(
+            ml,ω,tar,ftar,fmm,symmetry,own,Ref(box),Ref(idx))
     end
 end
 WaterLily.update!(b::BiotSavartPoisson) = (WaterLily.update!(b.ml); set_idx!(b))
 function set_idx!(b)
     B = transition_box(b.ml.levels[1].L,b.ml.perdir)
-    isassigned(b.idx) && B==b.box[] && return b
+    B==b.box[] && return b
     b.box[],b.idx[] = B,near_targets(B,b.ω,b.ftar,b.ml.perdir); b
 end
 function near_targets(B,ω,ftar,perdir)
