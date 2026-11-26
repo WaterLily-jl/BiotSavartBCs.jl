@@ -38,20 +38,35 @@ using Atomix
 # Biot-Savart BCs + residual update
 function biotBC!(r,u,U,ml,targets,flat_targets;fmm=true,perdir=(),symmetry=(),kw...)
     fmm ? fmmBC!(ml,targets,flat_targets,perdir,symmetry;kw...) : treeBC!(ml,targets[1],perdir) # Fill ml[targets]=uᵥ
-    @loop _biotBC!(r,u,U,ml[1],Ii) over Ii ∈ targets[1]         # Update the u,r
+    update_resid!(r,u,U,ml[1],targets[1])                          # Update the u,r
     fix_resid!(r,u,targets[1])                                     # Fix u,r
 end
 @inline function _biotBC!(r,u,U,uᵥ,Ii)
     I,i = front(Ii),last(Ii); lower = I.I[i]==1
     uₙ = U[i]+uᵥ[Ii]
     uI = lower ? Ii+δ(i,Ii) : Ii; uₙ⁰ = u[uI]; u[uI] = uₙ
-    Atomix.@atomic r[I+(lower ? δ(i,I) : -δ(i,I))] += (uₙ-uₙ⁰)*(lower ? -1 : 1)
+    add!(r,I+(lower ? δ(i,I) : -δ(i,I)),(uₙ-uₙ⁰)*(lower ? -1 : 1))
 end
 
+# Targets with different normals add to the same edge and corner cells of r: atomically in one loop,
+# or one normal at a time for element types that atomics don't take (e.g. Dual)
+const Atomic = Union{Float32,Float64}
+@inline add!(r::AbstractArray{<:Atomic},I,x) = Atomix.@atomic r[I] += x
+@inline add!(r,I,x) = r[I] += x
+update_resid!(r::AbstractArray{<:Atomic},u,U,uᵥ,targets) = @loop _biotBC!(r,u,U,uᵥ,Ii) over Ii ∈ targets
+update_resid!(r,u,U,uᵥ,targets) = for j ∈ 1:ndims(r)
+    @loop _biotBC!(r,u,U,uᵥ,Ii,j) over Ii ∈ targets
+end
+@inline _biotBC!(r,u,U,uᵥ,Ii,j) = last(Ii)==j && _biotBC!(r,u,U,uᵥ,Ii)
+
 # Correct the global residual s.t. sum(r)=0
-fix_resid!(r,u,targets,fix=sum(r)/length(targets)) = @loop _fix_resid!(r,u,fix,Ii) over Ii ∈ targets
+fix_resid!(r::AbstractArray{<:Atomic},u,targets,fix=sum(r)/length(targets)) = @loop _fix_resid!(r,u,fix,Ii) over Ii ∈ targets
+fix_resid!(r,u,targets,fix=sum(r)/length(targets)) = for j ∈ 1:ndims(r)
+    @loop _fix_resid!(r,u,fix,Ii,j) over Ii ∈ targets
+end
 @inline function _fix_resid!(r,u,fix,Ii)
     I,i = front(Ii),last(Ii); lower = I.I[i]==1
     u[I+ (lower ? δ(i,I) : zero(I)),i] += fix*(lower ? 1 : -1)
-    Atomix.@atomic r[I+ (lower ? δ(i,I) : -δ(i,I))] -= fix
+    add!(r,I+ (lower ? δ(i,I) : -δ(i,I)),-fix)
 end
+@inline _fix_resid!(r,u,fix,Ii,j) = last(Ii)==j && _fix_resid!(r,u,fix,Ii)
